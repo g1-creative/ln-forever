@@ -23,7 +23,8 @@ export async function createSession(
     notes: notes || null,
   };
 
-  const { error } = await supabase.from('sessions').insert(session);
+  // Type assertion needed due to Supabase type inference limitations during build
+  const { error } = await (supabase.from('sessions') as any).insert(session);
   if (error) throw error;
 
   // Update progress
@@ -39,8 +40,9 @@ async function updateProgress(durationSeconds: number): Promise<void> {
   const today = new Date().toISOString().split('T')[0];
 
   // Get or create today's progress
-  const { data: existing } = await supabase
-    .from('progress')
+  // Type assertion needed due to Supabase type inference limitations during build
+  const { data: existing } = await (supabase
+    .from('progress') as any)
     .select('*')
     .eq('user_id', user.id)
     .eq('date', today)
@@ -48,8 +50,7 @@ async function updateProgress(durationSeconds: number): Promise<void> {
 
   if (existing) {
     // Update existing
-    await supabase
-      .from('progress')
+    await (supabase.from('progress') as any)
       .update({
         scenarios_completed: existing.scenarios_completed + 1,
         time_practiced_seconds: existing.time_practiced_seconds + durationSeconds,
@@ -57,7 +58,7 @@ async function updateProgress(durationSeconds: number): Promise<void> {
       .eq('id', existing.id);
   } else {
     // Create new
-    await supabase.from('progress').insert({
+    await (supabase.from('progress') as any).insert({
       user_id: user.id,
       date: today,
       scenarios_completed: 1,
@@ -73,8 +74,9 @@ export async function getSessionHistory(limit = 10) {
   
   if (!user) return [];
 
-  const { data, error } = await supabase
-    .from('sessions')
+  // Type assertion needed due to Supabase type inference limitations during build
+  const { data, error } = await (supabase
+    .from('sessions') as any)
     .select(`
       *,
       scenarios (

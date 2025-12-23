@@ -6,6 +6,7 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import { Database } from '@/types/database.types';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
 
 interface AuthContextType {
   user: User | null;
@@ -15,7 +16,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  updateProfile: (updates: ProfileUpdate) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -99,18 +100,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const updateProfile = async (updates: ProfileUpdate) => {
     if (!user) throw new Error('No user logged in');
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updates)
+    // Remove id, created_at, updated_at from updates as they shouldn't be updated directly
+    const { id, created_at, updated_at, ...updateData } = updates;
+    
+    // Type assertion needed due to Supabase type inference limitations during build
+    const { data, error } = await (supabase
+      .from('profiles') as any)
+      .update(updateData)
       .eq('id', user.id)
       .select()
       .single();
 
     if (error) throw error;
-    setProfile(data);
+    if (data) setProfile(data);
   };
 
   return (

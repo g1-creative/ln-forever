@@ -36,8 +36,8 @@ export async function getScenariosFromDb(
 ): Promise<Scenario[]> {
   const supabase = getSupabaseClient();
   
-  let query = supabase
-    .from('scenarios')
+  // Type assertion needed due to Supabase type inference limitations during build
+  let query = (supabase.from('scenarios') as any)
     .select('*')
     .eq('is_community', true);
 
@@ -56,7 +56,7 @@ export async function getScenariosFromDb(
     return [];
   }
 
-  return data.map(dbToScenario);
+  return (data || []).map(dbToScenario);
 }
 
 export async function getRandomScenarioFromDb(
@@ -78,8 +78,9 @@ export async function createScenario(scenario: Omit<Scenario, 'id'>): Promise<Sc
   dbScenario.created_by = user.id;
   dbScenario.is_community = false;
 
-  const { data, error } = await supabase
-    .from('scenarios')
+  // Type assertion needed due to Supabase type inference limitations during build
+  const { data, error } = await (supabase
+    .from('scenarios') as any)
     .insert(dbScenario)
     .select()
     .single();
@@ -94,8 +95,9 @@ export async function saveScenarioToFavorites(scenarioId: string): Promise<void>
   
   if (!user) throw new Error('Must be logged in to save favorites');
 
-  const { error } = await supabase
-    .from('user_scenarios')
+  // Type assertion needed due to Supabase type inference limitations during build
+  const { error } = await (supabase
+    .from('user_scenarios') as any)
     .upsert({
       user_id: user.id,
       scenario_id: scenarioId,
