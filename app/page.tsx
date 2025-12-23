@@ -18,8 +18,8 @@ export default function Home() {
           <Image 
             src="/images/ln_logo_favicon.png" 
             alt="Couples Games Hub" 
-            width={80} 
-            height={80}
+            width={160} 
+            height={160}
             className="hero-logo-img"
           />
         </div>
