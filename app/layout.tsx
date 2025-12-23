@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   title: 'Couples Games Hub - Practice English Conversation',
   description: 'Play fun games together and practice English conversation. Perfect for couples learning English together.',
   icons: {
-    icon: '/images/ln_logo_favicon.png',
+    icon: [
+      { url: '/images/ln_logo_favicon.png', sizes: '32x32', type: 'image/png' },
+    ],
     shortcut: '/images/ln_logo_favicon.png',
     apple: '/images/ln_logo_favicon.png',
   },

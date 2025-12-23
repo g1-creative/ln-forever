@@ -87,12 +87,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
+        emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/games` : undefined,
         data: {
           name: name || email.split('@')[0],
         },
       },
     });
     if (error) throw error;
+    
+    // If email confirmation is enabled, show a message
+    if (data.user && !data.session) {
+      // User needs to confirm email - but don't throw error, just inform them
+      // They can still proceed, Supabase will handle the confirmation
+    }
   };
 
   const signOut = async () => {

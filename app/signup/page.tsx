@@ -21,7 +21,8 @@ export default function SignupPage() {
 
     try {
       await signUp(email, password, name);
-      router.push('/play');
+      // If signup succeeds, redirect to games
+      router.push('/games');
     } catch (err: any) {
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
