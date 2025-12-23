@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Role-Play Roulette - Practice English conversation with fun scenarios">
+    <title>🎭 Role-Play Roulette</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Role-Play Roulette</h1>
+            <p>Practice English conversation together ❤️</p>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Choose Difficulty</div>
+            <div class="difficulty-selector">
+                <button class="difficulty-btn easy active" data-difficulty="easy">🟢 Easy</button>
+                <button class="difficulty-btn medium" data-difficulty="medium">🟡 Medium</button>
+                <button class="difficulty-btn hard" data-difficulty="hard">🔴 Hard</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Choose Category</div>
+            <div class="category-selector">
+                <button class="category-btn" data-category="all">All Categories</button>
+                <button class="category-btn active" data-category="daily">🏠 Daily Life</button>
+                <button class="category-btn" data-category="travel">✈️ Travel</button>
+                <button class="category-btn" data-category="work">💼 Work</button>
+                <button class="category-btn" data-category="romance">💖 Romance</button>
+                <button class="category-btn" data-category="fun">😂 Fun / Silly</button>
+                <button class="category-btn" data-category="deep">🧠 Deep Talk</button>
+            </div>
+        </div>
+
+        <button class="spin-button" id="spinBtn">🎰 Spin Scenario</button>
+
+        <div class="scenario-card" id="scenarioCard">
+            <div class="scenario-header">
+                <div class="scenario-title" id="scenarioTitle"></div>
+                <div class="scenario-actions">
+                    <button class="action-btn swap-btn" id="swapBtn" title="Swap Roles">
+                        🔄 Swap Roles
+                    </button>
+                </div>
+            </div>
+            
+            <div class="timer-section" id="timerSection" style="display: none;">
+                <div class="timer-container">
+                    <div class="timer-circle">
+                        <svg class="timer-svg" viewBox="0 0 100 100">
+                            <circle class="timer-bg" cx="50" cy="50" r="45"></circle>
+                            <circle class="timer-progress" id="timerProgress" cx="50" cy="50" r="45"></circle>
+                        </svg>
+                        <div class="timer-text" id="timerText">2:30</div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="timer-btn" id="startTimerBtn">⏱️ Start Timer</button>
+                        <button class="timer-btn" id="stopTimerBtn" style="display: none;">⏸️ Stop</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="role-section" id="roleASection">
+                <div class="role-label">👤 Role A</div>
+                <div class="role-description" id="roleA"></div>
+            </div>
+            <div class="role-section" id="roleBSection">
+                <div class="role-label">👤 Role B</div>
+                <div class="role-description" id="roleB"></div>
+            </div>
+            <div class="hints-section">
+                <div class="hints-title">💡 Helpful Words</div>
+                <div class="hints-list" id="hintsList"></div>
+            </div>
+        </div>
+
+        <div class="scenario-card" id="noScenarioCard" style="display: none;">
+            <div class="no-scenario">
+                <div class="no-scenario-emoji">😊</div>
+                <div>Try another category or difficulty 😊</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
