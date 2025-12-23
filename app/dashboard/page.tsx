@@ -109,6 +109,13 @@ export default function Dashboard() {
       <ProtectedRoute>
         <div className="container">
           <div className="page-header">
+            <Image 
+              src="/images/ln_logo_favicon.png" 
+              alt="Couples Games Hub" 
+              width={64} 
+              height={64}
+              className="page-header-logo"
+            />
             <h1>Your Progress</h1>
             <p>Loading your stats...</p>
           </div>
