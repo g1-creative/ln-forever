@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
+import { TrophyIcon } from '@/components/Icons';
 
 interface Stats {
   totalSessions: number;
@@ -170,7 +171,10 @@ export default function Dashboard() {
 
           {/* Achievements */}
           <div className="section">
-            <div className="section-title">Achievements</div>
+            <div className="section-title">
+              <TrophyIcon />
+              <span>Achievements</span>
+            </div>
             <div className="achievements-grid">
               {achievements.map((achievement) => (
                 <div

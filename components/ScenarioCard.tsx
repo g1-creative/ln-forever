@@ -7,6 +7,7 @@ import { Scenario } from '@/types';
 import Timer from './Timer';
 import { createSession } from '@/lib/db/sessions';
 import { useAuth } from '@/contexts/AuthContext';
+import { SwapIcon, UserIcon, LightbulbIcon } from '@/components/Icons';
 
 interface ScenarioCardProps {
   scenario: Scenario | null;
@@ -61,7 +62,8 @@ export default function ScenarioCard({
         <div className="scenario-title">{scenario.title}</div>
         <div className="scenario-actions">
           <button className="action-btn swap-btn" onClick={onSwapRoles}>
-            Swap Roles
+            <SwapIcon />
+            <span>Swap Roles</span>
           </button>
         </div>
       </div>
@@ -74,15 +76,24 @@ export default function ScenarioCard({
       )}
 
       <div className={`role-section ${rolesSwapped ? 'swapped' : ''}`} id="roleASection">
-        <div className="role-label">Role A</div>
+        <div className="role-label">
+          <UserIcon />
+          <span>Role A</span>
+        </div>
         <div className="role-description">{roleA}</div>
       </div>
       <div className="role-section" id="roleBSection">
-        <div className="role-label">Role B</div>
+        <div className="role-label">
+          <UserIcon />
+          <span>Role B</span>
+        </div>
         <div className="role-description">{roleB}</div>
       </div>
       <div className="hints-section">
-        <div className="hints-title">Helpful Words</div>
+        <div className="hints-title">
+          <LightbulbIcon />
+          <span>Helpful Words</span>
+        </div>
         <div className="hints-list">
           {scenario.hints.map((hint, index) => (
             <span key={index} className="hint-tag">

@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { TargetIcon, BookIcon, ChartIcon, ClockIcon } from '@/components/Icons';
 
 export default function Home() {
   const { user } = useAuth();
@@ -40,22 +41,30 @@ export default function Home() {
 
       <div className="features-grid">
         <div className="feature-card">
-          <div className="feature-icon">🎯</div>
+          <div className="feature-icon">
+            <TargetIcon />
+          </div>
           <h3>Multiple Difficulties</h3>
           <p>Choose from Easy, Medium, or Hard scenarios based on your level</p>
         </div>
         <div className="feature-card">
-          <div className="feature-icon">📚</div>
+          <div className="feature-icon">
+            <BookIcon />
+          </div>
           <h3>Various Categories</h3>
           <p>Practice conversations for daily life, travel, work, romance, and more</p>
         </div>
         <div className="feature-card">
-          <div className="feature-icon">📊</div>
+          <div className="feature-icon">
+            <ChartIcon />
+          </div>
           <h3>Track Progress</h3>
           <p>Monitor your practice sessions, streaks, and achievements</p>
         </div>
         <div className="feature-card">
-          <div className="feature-icon">⏱️</div>
+          <div className="feature-icon">
+            <ClockIcon />
+          </div>
           <h3>Practice Timer</h3>
           <p>Use the built-in timer to structure your practice sessions</p>
         </div>
