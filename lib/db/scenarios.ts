@@ -35,6 +35,10 @@ export async function getScenariosFromDb(
   category?: string
 ): Promise<Scenario[]> {
   const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.warn('Supabase not available, returning empty array');
+    return [];
+  }
   
   // Type assertion needed due to Supabase type inference limitations during build
   let query = (supabase.from('scenarios') as any)
@@ -70,6 +74,8 @@ export async function getRandomScenarioFromDb(
 
 export async function createScenario(scenario: Omit<Scenario, 'id'>): Promise<Scenario> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not initialized');
+  
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) throw new Error('Must be logged in to create scenarios');
@@ -91,6 +97,8 @@ export async function createScenario(scenario: Omit<Scenario, 'id'>): Promise<Sc
 
 export async function saveScenarioToFavorites(scenarioId: string): Promise<void> {
   const supabase = getSupabaseClient();
+  if (!supabase) throw new Error('Supabase client not initialized');
+  
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) throw new Error('Must be logged in to save favorites');

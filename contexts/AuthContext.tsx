@@ -29,52 +29,124 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = getSupabaseClient();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
+    if (!supabase) {
+      // If Supabase is not available, just set loading to false
+      setLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    // Get initial session with timeout
+    const sessionPromise = supabase.auth.getSession();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Session check timeout')), 5000)
+    );
+
+    Promise.race([sessionPromise, timeoutPromise])
+      .then((result: any) => {
+        if (!mounted) return;
+        
+        const { data: { session }, error } = result;
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Error in getSession:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      });
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
+    try {
+      const {
+        data: { subscription: authSubscription },
+      } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
+      });
+      subscription = { unsubscribe: () => authSubscription.unsubscribe() };
+    } catch (error) {
+      console.error('Error setting up auth listener:', error);
+      if (mounted) {
         setLoading(false);
       }
-    });
+    }
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [supabase]);
 
   const fetchProfile = async (userId: string) => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const profilePromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+      );
 
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
+      const result: any = await Promise.race([profilePromise, timeoutPromise]);
+      const { data, error } = result;
+
+      if (error) {
+        // Profile might not exist yet, that's okay
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, will be created on first use');
+          setProfile(null);
+        } else {
+          console.error('Error fetching profile:', error);
+          setProfile(null);
+        }
+      } else {
+        setProfile(data);
+      }
+    } catch (error: any) {
       console.error('Error fetching profile:', error);
+      // Don't block the app if profile fetch fails
+      setProfile(null);
     } finally {
       setLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -83,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -103,12 +176,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!supabase) throw new Error('Supabase client not initialized');
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
 
   const updateProfile = async (updates: ProfileUpdate) => {
     if (!user) throw new Error('No user logged in');
+    if (!supabase) throw new Error('Supabase client not initialized');
     
     // Remove id, created_at, updated_at from updates as they shouldn't be updated directly
     const { id, created_at, updated_at, ...updateData } = updates;

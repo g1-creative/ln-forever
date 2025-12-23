@@ -10,8 +10,13 @@ export async function createSession(
   notes?: string
 ): Promise<void> {
   const supabase = getSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  if (!supabase) {
+    console.warn('Supabase not available, cannot save session');
+    return;
+  }
   
+  const { data: { user } } = await supabase.auth.getUser();
+
   if (!user) throw new Error('Must be logged in to create sessions');
 
   const session: SessionInsert = {
@@ -33,6 +38,8 @@ export async function createSession(
 
 async function updateProgress(durationSeconds: number): Promise<void> {
   const supabase = getSupabaseClient();
+  if (!supabase) return;
+  
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) return;
@@ -70,6 +77,8 @@ async function updateProgress(durationSeconds: number): Promise<void> {
 
 export async function getSessionHistory(limit = 10) {
   const supabase = getSupabaseClient();
+  if (!supabase) return [];
+  
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) return [];

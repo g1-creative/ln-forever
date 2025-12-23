@@ -38,6 +38,11 @@ export default function Dashboard() {
 
     try {
       const supabase = getSupabaseClient();
+      if (!supabase) {
+        console.error('Supabase client not available');
+        setLoadingStats(false);
+        return;
+      }
       
       // Get all sessions
       const { data: sessions, error: sessionsError } = await (supabase
