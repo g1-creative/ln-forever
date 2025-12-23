@@ -2,26 +2,30 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-import { TargetIcon, BookIcon, ChartIcon, ClockIcon } from '@/components/Icons';
+import { getFeaturedGames, getAvailableGames } from '@/lib/games';
+import GameCard from '@/components/GameCard';
 
 export default function Home() {
   const { user } = useAuth();
+  const featuredGames = getFeaturedGames();
+  const availableGames = getAvailableGames();
 
   return (
     <div className="container">
       <div className="landing-hero">
-        <h1>Role-Play Roulette</h1>
+        <h1>Couples Games Hub</h1>
         <p className="hero-subtitle">
-          Practice English conversation with fun, interactive scenarios
+          Play fun games together and practice English conversation
         </p>
         <p className="hero-description">
-          Perfect for couples learning English together. Choose scenarios, practice speaking, and track your progress.
+          A collection of interactive games designed for couples learning English together. 
+          Practice speaking, build vocabulary, and have fun while improving your language skills.
         </p>
 
         {user ? (
           <div className="hero-actions">
-            <Link href="/play" className="hero-btn primary">
-              Start Practicing
+            <Link href="/games" className="hero-btn primary">
+              Browse Games
             </Link>
             <Link href="/dashboard" className="hero-btn secondary">
               View Dashboard
@@ -39,36 +43,36 @@ export default function Home() {
         )}
       </div>
 
-      <div className="features-grid">
-        <div className="feature-card">
-          <div className="feature-icon">
-            <TargetIcon />
+      {featuredGames.length > 0 && (
+        <div className="section">
+          <div className="section-title">
+            <span>Featured Games</span>
           </div>
-          <h3>Multiple Difficulties</h3>
-          <p>Choose from Easy, Medium, or Hard scenarios based on your level</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">
-            <BookIcon />
+          <div className="games-grid">
+            {featuredGames.map((game) => (
+              <GameCard key={game.id} game={game} />
+            ))}
           </div>
-          <h3>Various Categories</h3>
-          <p>Practice conversations for daily life, travel, work, romance, and more</p>
         </div>
-        <div className="feature-card">
-          <div className="feature-icon">
-            <ChartIcon />
+      )}
+
+      {availableGames.length > 0 && (
+        <div className="section">
+          <div className="section-title">
+            <span>Available Now</span>
           </div>
-          <h3>Track Progress</h3>
-          <p>Monitor your practice sessions, streaks, and achievements</p>
-        </div>
-        <div className="feature-card">
-          <div className="feature-icon">
-            <ClockIcon />
+          <div className="games-grid">
+            {availableGames.map((game) => (
+              <GameCard key={game.id} game={game} />
+            ))}
           </div>
-          <h3>Practice Timer</h3>
-          <p>Use the built-in timer to structure your practice sessions</p>
+          <div className="section-footer">
+            <Link href="/games" className="hero-btn secondary">
+              View All Games →
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

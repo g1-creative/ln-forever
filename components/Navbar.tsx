@@ -21,10 +21,10 @@ export default function Navbar() {
           {user ? (
             <>
               <Link 
-                href="/play" 
-                className={`navbar-link ${isActive('/play') ? 'active' : ''}`}
+                href="/games" 
+                className={`navbar-link ${isActive('/games') || isActive('/games/') ? 'active' : ''}`}
               >
-                Play
+                Games
               </Link>
               <Link 
                 href="/dashboard" 

@@ -1326,6 +1326,14 @@ main {
   .landing-hero {
     padding: var(--space-xl) 0;
   }
+
+  .games-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ============================================
@@ -1673,6 +1681,301 @@ main {
   font-size: 1.125rem;
   font-weight: 600;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   UTILITIES
+   ============================================ */
+
+/* ============================================
+   GAME CARDS
+   ============================================ */
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.game-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-base);
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  transform: scaleX(0);
+  transition: transform var(--transition-base);
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--primary);
+}
+
+.game-card:hover::before {
+  transform: scaleX(1);
+}
+
+.game-card-disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.game-card-disabled:hover {
+  transform: none;
+  box-shadow: var(--shadow-lg);
+}
+
+.game-card-purple::before {
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+.game-card-blue::before {
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.game-card-green::before {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.game-card-pink::before {
+  background: linear-gradient(90deg, #ec4899 0%, #f472b6 100%);
+}
+
+.game-card-orange::before {
+  background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.game-card-red::before {
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+}
+
+.game-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-lg);
+}
+
+.game-card-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-gradient-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--primary);
+}
+
+.game-card-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: currentColor;
+}
+
+.game-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: white;
+}
+
+.game-badge.coming-soon {
+  background: var(--gray-400);
+}
+
+.game-card-content {
+  flex: 1;
+  margin-bottom: var(--space-lg);
+}
+
+.game-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--space-sm);
+  letter-spacing: -0.02em;
+}
+
+.game-card-description {
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: var(--space-lg);
+  font-size: 0.9375rem;
+}
+
+.game-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.game-meta-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.game-meta-label {
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+.game-meta-value {
+  color: var(--gray-700);
+  font-weight: 600;
+}
+
+.game-card-footer {
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--gray-200);
+}
+
+.game-card-action {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9375rem;
+  display: inline-block;
+  transition: all var(--transition-base);
+}
+
+.game-card:hover .game-card-action {
+  transform: translateX(5px);
+}
+
+.game-card-action.disabled {
+  color: var(--gray-400);
+}
+
+.game-card:hover .game-card-action.disabled {
+  transform: none;
+}
+
+/* ============================================
+   CATEGORIES GRID
+   ============================================ */
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.category-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-align: center;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  transition: all var(--transition-base);
+}
+
+.category-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.category-card h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: var(--space-xs);
+}
+
+.category-card p {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+}
+
+/* ============================================
+   INFO BANNER
+   ============================================ */
+
+.info-banner {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.info-banner p {
+  text-align: center;
+  color: var(--gray-700);
+  margin-bottom: var(--space-lg);
+  font-size: 1rem;
+}
+
+.info-banner strong {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.info-banner-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.info-banner-actions .hero-btn {
+  min-width: 140px;
+}
+
+/* ============================================
+   BACK LINK
+   ============================================ */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: white;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  opacity: 0.9;
+  transition: all var(--transition-base);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+}
+
+.back-link:hover {
+  opacity: 1;
+  transform: translateX(-3px);
+}
+
+/* ============================================
+   SECTION FOOTER
+   ============================================ */
+
+.section-footer {
+  margin-top: var(--space-xl);
+  text-align: center;
 }
 
 /* ============================================

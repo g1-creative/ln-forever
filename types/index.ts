@@ -17,3 +17,17 @@ export interface GameState {
   currentScenario: Scenario | null;
   rolesSwapped: boolean;
 }
+
+export interface Game {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  icon: string;
+  color: string;
+  difficulty: string;
+  players: string;
+  duration: string;
+  featured: boolean;
+  available: boolean;
+}

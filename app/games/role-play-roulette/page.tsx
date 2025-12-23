@@ -5,8 +5,9 @@ import { Difficulty, Category, Scenario } from '@/types';
 import { getRandomScenario } from '@/lib/scenarios';
 import ScenarioCard from '@/components/ScenarioCard';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import Link from 'next/link';
 
-export default function PlayPage() {
+export default function RolePlayRoulettePage() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
   const [selectedCategory, setSelectedCategory] = useState<Category>('daily');
   const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
@@ -46,8 +47,11 @@ export default function PlayPage() {
     <ProtectedRoute>
       <div className="container">
         <div className="page-header">
-          <h1>Practice Mode</h1>
-          <p>Choose your settings and start practicing</p>
+          <Link href="/games" className="back-link">
+            ← Back to Games
+          </Link>
+          <h1>Role-Play Roulette</h1>
+          <p>Practice English conversation with fun, interactive scenarios</p>
         </div>
 
         <div className="section">
