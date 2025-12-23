@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
 
 interface Stats {
@@ -103,26 +104,14 @@ export default function Dashboard() {
 
   if (loading || loadingStats) {
     return (
-      <div className="container">
-        <div className="header">
-          <h1>📊 Your Progress</h1>
-          <p>Loading your stats...</p>
+      <ProtectedRoute>
+        <div className="container">
+          <div className="page-header">
+            <h1>Your Progress</h1>
+            <p>Loading your stats...</p>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="container">
-        <div className="header">
-          <h1>📊 Your Progress</h1>
-          <p>Please sign in to view your progress</p>
-        </div>
-        <Link href="/" className="spin-button" style={{ textDecoration: 'none', display: 'block', textAlign: 'center' }}>
-          ← Go Home
-        </Link>
-      </div>
+      </ProtectedRoute>
     );
   }
 
@@ -135,15 +124,12 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="container">
-      <div className="header">
-        <h1>Your Progress</h1>
-        <p>Keep practicing! You&apos;re doing great</p>
-      </div>
-
-      <Link href="/" className="nav-link">
-        ← Back to Game
-      </Link>
+    <ProtectedRoute>
+      <div className="container">
+        <div className="page-header">
+          <h1>Your Progress</h1>
+          <p>Keep practicing! You&apos;re doing great</p>
+        </div>
 
       {stats && (
         <>
@@ -234,7 +220,7 @@ export default function Dashboard() {
                 <p>Start practicing to see your progress here!</p>
                 <p>Complete your first scenario to unlock achievements.</p>
               </div>
-                <Link href="/" className="spin-button" style={{ textDecoration: 'none', display: 'block', textAlign: 'center', marginTop: '20px' }}>
+                <Link href="/play" className="spin-button" style={{ textDecoration: 'none', display: 'block', textAlign: 'center', marginTop: '20px' }}>
                   Start Practicing →
                 </Link>
               </div>
@@ -242,6 +228,7 @@ export default function Dashboard() {
           )}
         </>
       )}
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -1,119 +1,65 @@
 'use client';
 
-import { useState } from 'react';
-import { Difficulty, Category, Scenario } from '@/types';
-import { getRandomScenario } from '@/lib/scenarios';
-import ScenarioCard from '@/components/ScenarioCard';
-import AuthButton from '@/components/AuthButton';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
 export default function Home() {
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
-  const [selectedCategory, setSelectedCategory] = useState<Category>('daily');
-  const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
-  const [rolesSwapped, setRolesSwapped] = useState(false);
-  const [showNoScenario, setShowNoScenario] = useState(false);
-
-  const handleSpin = () => {
-    setRolesSwapped(false);
-    setShowNoScenario(false);
-    
-    const scenario = getRandomScenario(selectedDifficulty, selectedCategory);
-    
-    if (!scenario) {
-      setCurrentScenario(null);
-      setShowNoScenario(true);
-      return;
-    }
-
-    setCurrentScenario(scenario);
-  };
-
-  const handleSwapRoles = () => {
-    setRolesSwapped(!rolesSwapped);
-  };
-
-  const categories: { value: Category; label: string; emoji: string }[] = [
-    { value: 'all', label: 'All Categories', emoji: '' },
-    { value: 'daily', label: 'Daily Life', emoji: '🏠' },
-    { value: 'travel', label: 'Travel', emoji: '✈️' },
-    { value: 'work', label: 'Work', emoji: '💼' },
-    { value: 'romance', label: 'Romance', emoji: '💖' },
-    { value: 'fun', label: 'Fun / Silly', emoji: '😂' },
-    { value: 'deep', label: 'Deep Talk', emoji: '🧠' },
-  ];
+  const { user } = useAuth();
 
   return (
     <div className="container">
-      <div className="header">
+      <div className="landing-hero">
         <h1>Role-Play Roulette</h1>
-        <p>Practice English conversation together</p>
-      </div>
+        <p className="hero-subtitle">
+          Practice English conversation with fun, interactive scenarios
+        </p>
+        <p className="hero-description">
+          Perfect for couples learning English together. Choose scenarios, practice speaking, and track your progress.
+        </p>
 
-      <AuthButton />
-
-      <Link href="/dashboard" className="nav-link">
-        View Progress →
-      </Link>
-
-      <div className="section">
-        <div className="section-title">Choose Difficulty</div>
-        <div className="difficulty-selector">
-          <button
-            className={`difficulty-btn easy ${selectedDifficulty === 'easy' ? 'active' : ''}`}
-            onClick={() => setSelectedDifficulty('easy')}
-          >
-            Easy
-          </button>
-          <button
-            className={`difficulty-btn medium ${selectedDifficulty === 'medium' ? 'active' : ''}`}
-            onClick={() => setSelectedDifficulty('medium')}
-          >
-            Medium
-          </button>
-          <button
-            className={`difficulty-btn hard ${selectedDifficulty === 'hard' ? 'active' : ''}`}
-            onClick={() => setSelectedDifficulty('hard')}
-          >
-            Hard
-          </button>
-        </div>
-      </div>
-
-      <div className="section">
-        <div className="section-title">Choose Category</div>
-        <div className="category-selector">
-          {categories.map((cat) => (
-            <button
-              key={cat.value}
-              className={`category-btn ${selectedCategory === cat.value ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(cat.value)}
-            >
-              {cat.emoji} {cat.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <button className="spin-button" onClick={handleSpin}>
-        Spin Scenario
-      </button>
-
-      {currentScenario && (
-        <ScenarioCard
-          scenario={currentScenario}
-          onSwapRoles={handleSwapRoles}
-          rolesSwapped={rolesSwapped}
-        />
-      )}
-
-      {showNoScenario && (
-        <div className="scenario-card show">
-          <div className="no-scenario">
-            <div>Try another category or difficulty</div>
+        {user ? (
+          <div className="hero-actions">
+            <Link href="/play" className="hero-btn primary">
+              Start Practicing
+            </Link>
+            <Link href="/dashboard" className="hero-btn secondary">
+              View Dashboard
+            </Link>
           </div>
+        ) : (
+          <div className="hero-actions">
+            <Link href="/signup" className="hero-btn primary">
+              Get Started
+            </Link>
+            <Link href="/login" className="hero-btn secondary">
+              Sign In
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <div className="features-grid">
+        <div className="feature-card">
+          <div className="feature-icon">🎯</div>
+          <h3>Multiple Difficulties</h3>
+          <p>Choose from Easy, Medium, or Hard scenarios based on your level</p>
         </div>
-      )}
+        <div className="feature-card">
+          <div className="feature-icon">📚</div>
+          <h3>Various Categories</h3>
+          <p>Practice conversations for daily life, travel, work, romance, and more</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">📊</div>
+          <h3>Track Progress</h3>
+          <p>Monitor your practice sessions, streaks, and achievements</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">⏱️</div>
+          <h3>Practice Timer</h3>
+          <p>Use the built-in timer to structure your practice sessions</p>
+        </div>
+      </div>
     </div>
   );
 }
