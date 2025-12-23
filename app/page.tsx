@@ -5,6 +5,7 @@ import { Difficulty, Category, Scenario } from '@/types';
 import { getRandomScenario } from '@/lib/scenarios';
 import ScenarioCard from '@/components/ScenarioCard';
 import AuthButton from '@/components/AuthButton';
+import Link from 'next/link';
 
 export default function Home() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('easy');
@@ -50,6 +51,10 @@ export default function Home() {
       </div>
 
       <AuthButton />
+
+      <Link href="/dashboard" className="nav-link">
+        📊 View Progress →
+      </Link>
 
       <div className="section">
         <div className="section-title">Choose Difficulty</div>

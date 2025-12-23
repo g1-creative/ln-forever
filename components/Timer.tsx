@@ -4,12 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 
 interface TimerProps {
   totalTime?: number; // in seconds
+  onComplete?: (durationSeconds: number) => void;
+  onStop?: (durationSeconds: number) => void;
 }
 
-export default function Timer({ totalTime = 150 }: TimerProps) {
+export default function Timer({ totalTime = 150, onComplete, onStop }: TimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(totalTime);
   const [isRunning, setIsRunning] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const progressRef = useRef<SVGCircleElement>(null);
 
@@ -44,9 +48,14 @@ export default function Timer({ totalTime = 150 }: TimerProps) {
     if (isRunning && timeRemaining > 0) {
       intervalRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
+          setElapsedTime((elapsed) => elapsed + 1);
           if (prev <= 1) {
             setIsRunning(false);
             setIsComplete(true);
+            const duration = totalTime; // Full timer completed
+            if (onComplete) {
+              onComplete(duration);
+            }
             // Vibrate if supported
             if (navigator.vibrate) {
               navigator.vibrate([200, 100, 200]);
@@ -68,16 +77,21 @@ export default function Timer({ totalTime = 150 }: TimerProps) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning, timeRemaining]);
+  }, [isRunning, timeRemaining, totalTime, onComplete]);
 
   const startTimer = () => {
     setIsComplete(false);
     setTimeRemaining(totalTime);
+    setElapsedTime(0);
+    setStartTime(Date.now());
     setIsRunning(true);
   };
 
   const stopTimer = () => {
     setIsRunning(false);
+    if (onStop && elapsedTime > 0) {
+      onStop(elapsedTime);
+    }
   };
 
   const resetTimer = () => {

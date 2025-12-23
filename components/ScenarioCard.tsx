@@ -1,8 +1,12 @@
 'use client';
 
+'use client';
+
 import { useState, useEffect } from 'react';
 import { Scenario } from '@/types';
 import Timer from './Timer';
+import { createSession } from '@/lib/db/sessions';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ScenarioCardProps {
   scenario: Scenario | null;
@@ -16,11 +20,35 @@ export default function ScenarioCard({
   rolesSwapped,
 }: ScenarioCardProps) {
   const [showTimer, setShowTimer] = useState(false);
+  const { user } = useAuth();
 
   // Reset timer when scenario changes
   useEffect(() => {
     setShowTimer(false);
   }, [scenario?.title]);
+
+  const handleTimerComplete = async (durationSeconds: number) => {
+    if (user && scenario?.id) {
+      try {
+        await createSession(scenario.id, null, durationSeconds);
+        console.log('Session saved successfully!');
+      } catch (error) {
+        console.error('Error saving session:', error);
+      }
+    }
+  };
+
+  const handleTimerStop = async (durationSeconds: number) => {
+    if (user && scenario?.id && durationSeconds > 30) {
+      // Only save if they practiced for at least 30 seconds
+      try {
+        await createSession(scenario.id, null, durationSeconds);
+        console.log('Session saved successfully!');
+      } catch (error) {
+        console.error('Error saving session:', error);
+      }
+    }
+  };
 
   if (!scenario) return null;
 
@@ -38,7 +66,12 @@ export default function ScenarioCard({
         </div>
       </div>
 
-      {showTimer && <Timer />}
+      {showTimer && (
+        <Timer 
+          onComplete={handleTimerComplete}
+          onStop={handleTimerStop}
+        />
+      )}
 
       <div className={`role-section ${rolesSwapped ? 'swapped' : ''}`} id="roleASection">
         <div className="role-label">👤 Role A</div>
