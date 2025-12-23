@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -128,6 +129,13 @@ export default function Dashboard() {
     <ProtectedRoute>
       <div className="container">
         <div className="page-header">
+          <Image 
+            src="/images/ln_logo_favicon.png" 
+            alt="Couples Games Hub" 
+            width={64} 
+            height={64}
+            className="page-header-logo"
+          />
           <h1>Your Progress</h1>
           <p>Keep practicing! You&apos;re doing great</p>
         </div>

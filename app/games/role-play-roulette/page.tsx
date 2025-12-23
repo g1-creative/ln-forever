@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Difficulty, Category, Scenario } from '@/types';
 import { getRandomScenario } from '@/lib/scenarios';
 import ScenarioCard from '@/components/ScenarioCard';
@@ -50,6 +51,13 @@ export default function RolePlayRoulettePage() {
           <Link href="/games" className="back-link">
             ← Back to Games
           </Link>
+          <Image 
+            src="/images/ln_logo_favicon.png" 
+            alt="Couples Games Hub" 
+            width={64} 
+            height={64}
+            className="page-header-logo"
+          />
           <h1>Role-Play Roulette</h1>
           <p>Practice English conversation with fun, interactive scenarios</p>
         </div>

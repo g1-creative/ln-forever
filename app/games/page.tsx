@@ -4,6 +4,7 @@ import { games, getFeaturedGames, getAvailableGames } from '@/lib/games';
 import GameCard from '@/components/GameCard';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function GamesPage() {
   const { user } = useAuth();
@@ -16,6 +17,13 @@ export default function GamesPage() {
   return (
     <div className="container">
       <div className="page-header">
+        <Image 
+          src="/images/ln_logo_favicon.png" 
+          alt="Couples Games Hub" 
+          width={64} 
+          height={64}
+          className="page-header-logo"
+        />
         <h1>Couples Games Hub</h1>
         <p>Play fun games together and practice English conversation</p>
       </div>

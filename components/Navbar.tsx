@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname } from 'next/navigation';
 
@@ -14,7 +15,14 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-container">
         <Link href="/" className="navbar-brand">
-          Role-Play Roulette
+          <Image 
+            src="/images/ln_logo_favicon.png" 
+            alt="Couples Games Hub" 
+            width={32} 
+            height={32}
+            className="navbar-logo"
+          />
+          <span>Couples Games Hub</span>
         </Link>
         
         <div className="navbar-links">

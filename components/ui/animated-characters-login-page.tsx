@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Mail, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -328,9 +329,15 @@ function LoginPage() {
       {/* Left Content Section */}
       <div className="relative hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary/90 via-primary to-primary/80 p-12 text-primary-foreground">
         <div className="relative z-20">
-            <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-            <div className="size-8 rounded-lg bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center">
-              <Sparkles className="size-4" />
+          <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+            <div className="size-8 rounded-lg bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center overflow-hidden">
+              <Image 
+                src="/images/ln_logo_favicon.png" 
+                alt="Couples Games Hub" 
+                width={24} 
+                height={24}
+                className="object-contain"
+              />
             </div>
             <span>Couples Games Hub</span>
           </Link>
@@ -530,8 +537,14 @@ function LoginPage() {
         <div className="w-full max-w-[420px]">
           {/* Mobile Logo */}
           <Link href="/" className="lg:hidden flex items-center justify-center gap-2 text-lg font-semibold mb-12">
-            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Sparkles className="size-4 text-primary" />
+            <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+              <Image 
+                src="/images/ln_logo_favicon.png" 
+                alt="Couples Games Hub" 
+                width={24} 
+                height={24}
+                className="object-contain"
+              />
             </div>
             <span>Couples Games Hub</span>
           </Link>

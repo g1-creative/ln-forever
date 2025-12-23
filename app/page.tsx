@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getFeaturedGames, getAvailableGames } from '@/lib/games';
 import GameCard from '@/components/GameCard';
 
@@ -13,6 +14,15 @@ export default function Home() {
   return (
     <div className="container">
       <div className="landing-hero">
+        <div className="hero-logo">
+          <Image 
+            src="/images/ln_logo_favicon.png" 
+            alt="Couples Games Hub" 
+            width={80} 
+            height={80}
+            className="hero-logo-img"
+          />
+        </div>
         <h1>Couples Games Hub</h1>
         <p className="hero-subtitle">
           Play fun games together and practice English conversation
