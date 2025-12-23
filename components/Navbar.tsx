@@ -17,12 +17,12 @@ export default function Navbar() {
         <Link href="/" className="navbar-brand">
           <Image 
             src="/images/ln_logo_favicon.png" 
-            alt="Couples Games Hub" 
+            alt="LN Forever" 
             width={32} 
             height={32}
             className="navbar-logo"
           />
-          <span>Couples Games Hub</span>
+          <span>LN Forever</span>
         </Link>
         
         <div className="navbar-links">

@@ -53,7 +53,7 @@ export default function RolePlayRoulettePage() {
           </Link>
           <Image 
             src="/images/ln_logo_favicon.png" 
-            alt="Couples Games Hub" 
+            alt="LN Forever" 
             width={64} 
             height={64}
             className="page-header-logo"

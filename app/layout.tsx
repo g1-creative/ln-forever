@@ -4,7 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 
 export const metadata: Metadata = {
-  title: 'Couples Games Hub - Practice English Conversation',
+  title: 'LN Forever - Practice English Conversation',
   description: 'Play fun games together and practice English conversation. Perfect for couples learning English together.',
   icons: {
     icon: [

@@ -333,13 +333,13 @@ function LoginPage() {
             <div className="size-8 rounded-lg bg-primary-foreground/10 backdrop-blur-sm flex items-center justify-center overflow-hidden">
               <Image 
                 src="/images/ln_logo_favicon.png" 
-                alt="Couples Games Hub" 
+                alt="LN Forever" 
                 width={24} 
                 height={24}
                 className="object-contain"
               />
             </div>
-            <span>Couples Games Hub</span>
+            <span>LN Forever</span>
           </Link>
         </div>
 
@@ -540,13 +540,13 @@ function LoginPage() {
             <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
               <Image 
                 src="/images/ln_logo_favicon.png" 
-                alt="Couples Games Hub" 
+                alt="LN Forever" 
                 width={24} 
                 height={24}
                 className="object-contain"
               />
             </div>
-            <span>Couples Games Hub</span>
+            <span>LN Forever</span>
           </Link>
 
           {/* Header */}

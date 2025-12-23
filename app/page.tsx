@@ -17,13 +17,13 @@ export default function Home() {
         <div className="hero-logo">
           <Image 
             src="/images/ln_logo_favicon.png" 
-            alt="Couples Games Hub" 
+            alt="LN Forever" 
             width={160} 
             height={160}
             className="hero-logo-img"
           />
         </div>
-        <h1>Couples Games Hub</h1>
+        <h1>LN Forever</h1>
         <p className="hero-subtitle">
           Play fun games together and practice English conversation
         </p>

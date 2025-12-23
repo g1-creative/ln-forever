@@ -19,12 +19,12 @@ export default function GamesPage() {
       <div className="page-header">
         <Image 
           src="/images/ln_logo_favicon.png" 
-          alt="Couples Games Hub" 
+          alt="LN Forever" 
           width={64} 
           height={64}
           className="page-header-logo"
         />
-        <h1>Couples Games Hub</h1>
+        <h1>LN Forever</h1>
         <p>Play fun games together and practice English conversation</p>
       </div>
 
