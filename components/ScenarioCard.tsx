@@ -61,7 +61,7 @@ export default function ScenarioCard({
         <div className="scenario-title">{scenario.title}</div>
         <div className="scenario-actions">
           <button className="action-btn swap-btn" onClick={onSwapRoles}>
-            🔄 Swap Roles
+            Swap Roles
           </button>
         </div>
       </div>
@@ -74,15 +74,15 @@ export default function ScenarioCard({
       )}
 
       <div className={`role-section ${rolesSwapped ? 'swapped' : ''}`} id="roleASection">
-        <div className="role-label">👤 Role A</div>
+        <div className="role-label">Role A</div>
         <div className="role-description">{roleA}</div>
       </div>
       <div className="role-section" id="roleBSection">
-        <div className="role-label">👤 Role B</div>
+        <div className="role-label">Role B</div>
         <div className="role-description">{roleB}</div>
       </div>
       <div className="hints-section">
-        <div className="hints-title">💡 Helpful Words</div>
+        <div className="hints-title">Helpful Words</div>
         <div className="hints-list">
           {scenario.hints.map((hint, index) => (
             <span key={index} className="hint-tag">
@@ -97,7 +97,7 @@ export default function ScenarioCard({
           onClick={() => setShowTimer(true)}
           style={{ marginTop: '15px', width: '100%' }}
         >
-          ⏱️ Show Timer
+          Show Timer
         </button>
       )}
     </div>

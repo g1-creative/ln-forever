@@ -46,14 +46,14 @@ export default function Home() {
   return (
     <div className="container">
       <div className="header">
-        <h1>🎭 Role-Play Roulette</h1>
-        <p>Practice English conversation together ❤️</p>
+        <h1>Role-Play Roulette</h1>
+        <p>Practice English conversation together</p>
       </div>
 
       <AuthButton />
 
       <Link href="/dashboard" className="nav-link">
-        📊 View Progress →
+        View Progress →
       </Link>
 
       <div className="section">
@@ -63,19 +63,19 @@ export default function Home() {
             className={`difficulty-btn easy ${selectedDifficulty === 'easy' ? 'active' : ''}`}
             onClick={() => setSelectedDifficulty('easy')}
           >
-            🟢 Easy
+            Easy
           </button>
           <button
             className={`difficulty-btn medium ${selectedDifficulty === 'medium' ? 'active' : ''}`}
             onClick={() => setSelectedDifficulty('medium')}
           >
-            🟡 Medium
+            Medium
           </button>
           <button
             className={`difficulty-btn hard ${selectedDifficulty === 'hard' ? 'active' : ''}`}
             onClick={() => setSelectedDifficulty('hard')}
           >
-            🔴 Hard
+            Hard
           </button>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function Home() {
       </div>
 
       <button className="spin-button" onClick={handleSpin}>
-        🎰 Spin Scenario
+        Spin Scenario
       </button>
 
       {currentScenario && (
@@ -110,8 +110,7 @@ export default function Home() {
       {showNoScenario && (
         <div className="scenario-card show">
           <div className="no-scenario">
-            <div className="no-scenario-emoji">😊</div>
-            <div>Try another category or difficulty 😊</div>
+            <div>Try another category or difficulty</div>
           </div>
         </div>
       )}

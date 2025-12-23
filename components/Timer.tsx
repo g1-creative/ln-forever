@@ -119,28 +119,28 @@ export default function Timer({ totalTime = 150, onComplete, onStop }: TimerProp
         <div className="timer-controls">
           {!isRunning && timeRemaining === totalTime && (
             <button className="timer-btn" onClick={startTimer}>
-              ⏱️ Start Timer
+              Start Timer
             </button>
           )}
           {isRunning && (
             <button className="timer-btn" onClick={stopTimer}>
-              ⏸️ Stop
+              Stop
             </button>
           )}
           {!isRunning && timeRemaining < totalTime && !isComplete && (
             <>
               <button className="timer-btn" onClick={startTimer}>
-                ▶️ Resume
+                Resume
               </button>
               <button className="timer-btn" onClick={resetTimer}>
-                🔄 Reset
+                Reset
               </button>
             </>
           )}
         </div>
         {isComplete && (
           <div className="timer-complete">
-            ⏰ Time&apos;s up! How did it go? 😊
+            Time&apos;s up! How did it go?
           </div>
         )}
       </div>

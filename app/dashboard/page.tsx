@@ -127,18 +127,18 @@ export default function Dashboard() {
   }
 
   const achievements = [
-    { id: 'first', name: 'First Steps', icon: '🎯', unlocked: stats && stats.totalSessions >= 1 },
-    { id: 'dedicated', name: 'Dedicated', icon: '🔥', unlocked: stats && stats.currentStreak >= 3 },
-    { id: 'expert', name: 'Expert', icon: '⭐', unlocked: stats && stats.totalSessions >= 10 },
-    { id: 'master', name: 'Master', icon: '👑', unlocked: stats && stats.totalSessions >= 25 },
-    { id: 'hardcore', name: 'Hardcore', icon: '💪', unlocked: stats && stats.scenariosByDifficulty.hard >= 5 },
+    { id: 'first', name: 'First Steps', unlocked: stats && stats.totalSessions >= 1 },
+    { id: 'dedicated', name: 'Dedicated', unlocked: stats && stats.currentStreak >= 3 },
+    { id: 'expert', name: 'Expert', unlocked: stats && stats.totalSessions >= 10 },
+    { id: 'master', name: 'Master', unlocked: stats && stats.totalSessions >= 25 },
+    { id: 'hardcore', name: 'Hardcore', unlocked: stats && stats.scenariosByDifficulty.hard >= 5 },
   ];
 
   return (
     <div className="container">
       <div className="header">
-        <h1>📊 Your Progress</h1>
-        <p>Keep practicing! You&apos;re doing great ❤️</p>
+        <h1>Your Progress</h1>
+        <p>Keep practicing! You&apos;re doing great</p>
       </div>
 
       <Link href="/" className="nav-link">
@@ -150,17 +150,14 @@ export default function Dashboard() {
           {/* Main Stats */}
           <div className="stats-grid">
             <div className="stat-card">
-              <div className="stat-icon">🎭</div>
               <div className="stat-value">{stats.totalSessions}</div>
               <div className="stat-label">Scenarios Completed</div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon">⏱️</div>
               <div className="stat-value">{stats.totalTimeMinutes}</div>
               <div className="stat-label">Minutes Practiced</div>
             </div>
             <div className="stat-card">
-              <div className="stat-icon">🔥</div>
               <div className="stat-value">{stats.currentStreak}</div>
               <div className="stat-label">Day Streak</div>
             </div>
@@ -171,17 +168,14 @@ export default function Dashboard() {
             <div className="section-title">Practice by Difficulty</div>
             <div className="difficulty-stats">
               <div className="difficulty-stat">
-                <span className="difficulty-emoji">🟢</span>
                 <span className="difficulty-count">{stats.scenariosByDifficulty.easy}</span>
                 <span className="difficulty-label">Easy</span>
               </div>
               <div className="difficulty-stat">
-                <span className="difficulty-emoji">🟡</span>
                 <span className="difficulty-count">{stats.scenariosByDifficulty.medium}</span>
                 <span className="difficulty-label">Medium</span>
               </div>
               <div className="difficulty-stat">
-                <span className="difficulty-emoji">🔴</span>
                 <span className="difficulty-count">{stats.scenariosByDifficulty.hard}</span>
                 <span className="difficulty-label">Hard</span>
               </div>
@@ -190,14 +184,13 @@ export default function Dashboard() {
 
           {/* Achievements */}
           <div className="section">
-            <div className="section-title">🏆 Achievements</div>
+            <div className="section-title">Achievements</div>
             <div className="achievements-grid">
               {achievements.map((achievement) => (
                 <div
                   key={achievement.id}
                   className={`achievement ${achievement.unlocked ? 'unlocked' : 'locked'}`}
                 >
-                  <div className="achievement-icon">{achievement.icon}</div>
                   <div className="achievement-name">{achievement.name}</div>
                   {achievement.unlocked && <div className="achievement-badge">✓</div>}
                 </div>
@@ -217,10 +210,6 @@ export default function Dashboard() {
                     </div>
                     <div className="session-meta">
                       <span className="session-difficulty">
-                        {session.scenarios?.difficulty === 'easy' && '🟢'}
-                        {session.scenarios?.difficulty === 'medium' && '🟡'}
-                        {session.scenarios?.difficulty === 'hard' && '🔴'}
-                        {' '}
                         {session.scenarios?.difficulty || 'N/A'}
                       </span>
                       {session.duration_seconds && (
@@ -240,12 +229,11 @@ export default function Dashboard() {
 
           {stats.totalSessions === 0 && (
             <div className="section">
-              <div className="no-data">
-                <div className="no-data-emoji">🎯</div>
-                <div className="no-data-text">
-                  <p>Start practicing to see your progress here!</p>
-                  <p>Complete your first scenario to unlock achievements.</p>
-                </div>
+            <div className="no-data">
+              <div className="no-data-text">
+                <p>Start practicing to see your progress here!</p>
+                <p>Complete your first scenario to unlock achievements.</p>
+              </div>
                 <Link href="/" className="spin-button" style={{ textDecoration: 'none', display: 'block', textAlign: 'center', marginTop: '20px' }}>
                   Start Practicing →
                 </Link>
