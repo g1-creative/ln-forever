@@ -23,11 +23,13 @@ export interface FriendRequestWithProfile {
   created_at: string;
   updated_at: string;
   sender_profile?: {
+    id: string;
     username: string | null;
     name: string | null;
     avatar_selection: string | null;
   };
   receiver_profile?: {
+    id: string;
     username: string | null;
     name: string | null;
     avatar_selection: string | null;
@@ -246,7 +248,7 @@ export async function getFriendRequests(): Promise<{
     .from('friend_requests') as any)
     .select(`
       *,
-      receiver:profiles!friend_requests_receiver_id_fkey(username, name, avatar_selection)
+      receiver:profiles!friend_requests_receiver_id_fkey(id, username, name, avatar_selection)
     `)
     .eq('sender_id', user.id)
     .eq('status', 'pending');
@@ -256,7 +258,7 @@ export async function getFriendRequests(): Promise<{
     .from('friend_requests') as any)
     .select(`
       *,
-      sender:profiles!friend_requests_sender_id_fkey(username, name, avatar_selection)
+      sender:profiles!friend_requests_sender_id_fkey(id, username, name, avatar_selection)
     `)
     .eq('receiver_id', user.id)
     .eq('status', 'pending');
@@ -266,11 +268,17 @@ export async function getFriendRequests(): Promise<{
   return {
     sent: (sent || []).map((r: any) => ({
       ...r,
-      receiver_profile: r.receiver,
+      receiver_profile: r.receiver ? {
+        id: r.receiver_id,
+        ...r.receiver,
+      } : undefined,
     })),
     received: (received || []).map((r: any) => ({
       ...r,
-      sender_profile: r.sender,
+      sender_profile: r.sender ? {
+        id: r.sender_id,
+        ...r.sender,
+      } : undefined,
     })),
   };
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { FriendRequestsProvider } from '@/contexts/FriendRequestsContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
 import Script from 'next/script'
 
@@ -79,7 +80,9 @@ export default function RootLayout({
           `}
         </Script>
         <AuthProvider>
-          <LayoutWrapper>{children}</LayoutWrapper>
+          <FriendRequestsProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
+          </FriendRequestsProvider>
         </AuthProvider>
       </body>
     </html>

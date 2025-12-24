@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFriendRequests } from '@/contexts/FriendRequestsContext';
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth();
+  const { pendingCount } = useFriendRequests();
   const pathname = usePathname();
 
   const isActive = (path: string) => pathname === path;
@@ -45,6 +47,9 @@ export default function Navbar() {
                 className={`navbar-link ${isActive('/profile') ? 'active' : ''}`}
               >
                 Profile
+                {pendingCount > 0 && (
+                  <span className="navbar-notification-badge">{pendingCount}</span>
+                )}
               </Link>
               <div className="navbar-user">
                 <span className="navbar-email">

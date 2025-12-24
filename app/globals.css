@@ -276,6 +276,36 @@ main {
   background: rgba(255, 111, 174, 0.1);
 }
 
+.navbar-link {
+  position: relative;
+}
+
+.navbar-notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  border-radius: var(--radius-full);
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
+  box-shadow: 0 2px 8px rgba(255, 111, 174, 0.5);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 .navbar-user {
   display: flex;
   align-items: center;
@@ -2613,6 +2643,13 @@ main {
   font-weight: 700;
   min-width: 20px;
   text-align: center;
+  margin-left: var(--space-xs);
+}
+
+.tab-badge.notification {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  box-shadow: 0 2px 8px rgba(255, 111, 174, 0.4);
+  animation: pulse 2s infinite;
 }
 
 .profile-avatar-section {
@@ -2750,6 +2787,27 @@ main {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
+}
+
+.friend-requests-list {
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  background: linear-gradient(135deg, rgba(255, 111, 174, 0.05) 0%, rgba(123, 77, 255, 0.05) 100%);
+}
+
+.friend-request-item {
+  background: white;
+  border: 1px solid var(--lavender);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-sm);
+  box-shadow: 0 2px 8px rgba(255, 111, 174, 0.1);
+}
+
+.friend-request-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(255, 111, 174, 0.2);
 }
 
 .search-users {

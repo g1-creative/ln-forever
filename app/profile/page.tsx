@@ -2,18 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFriendRequests } from '@/contexts/FriendRequestsContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { getSupabaseClient } from '@/lib/supabase/client';
 import { 
   getFriends, 
-  getFriendRequests, 
   sendFriendRequest, 
   acceptFriendRequest, 
   rejectFriendRequest, 
   removeFriend,
   searchUsersByUsername,
   FriendWithProfile,
-  FriendRequestWithProfile
 } from '@/lib/db/friends';
 import { UserIcon } from '@/components/Icons';
 import Image from 'next/image';
@@ -37,6 +36,7 @@ const AVATAR_OPTIONS = [
 
 export default function ProfilePage() {
   const { user, profile, updateProfile } = useAuth();
+  const { friendRequests, refreshFriendRequests } = useFriendRequests();
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('');
@@ -45,7 +45,6 @@ export default function ProfilePage() {
   
   // Friends state
   const [friends, setFriends] = useState<FriendWithProfile[]>([]);
-  const [friendRequests, setFriendRequests] = useState<{ sent: FriendRequestWithProfile[]; received: FriendRequestWithProfile[] }>({ sent: [], received: [] });
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'profile' | 'friends'>('profile');
@@ -65,15 +64,21 @@ export default function ProfilePage() {
     }
   }, [activeTab, user]);
 
+  // Auto-switch to friends tab if there are pending requests
+  useEffect(() => {
+    if (friendRequests.received.length > 0 && activeTab === 'profile') {
+      // Optionally auto-switch, or just show a notification
+      // setActiveTab('friends');
+    }
+  }, [friendRequests.received.length, activeTab]);
+
   const loadFriends = async () => {
     setLoadingFriends(true);
     try {
-      const [friendsData, requestsData] = await Promise.all([
-        getFriends(),
-        getFriendRequests(),
-      ]);
+      const friendsData = await getFriends();
       setFriends(friendsData);
-      setFriendRequests(requestsData);
+      // Refresh friend requests from context
+      await refreshFriendRequests();
     } catch (error) {
       console.error('Error loading friends:', error);
     } finally {
@@ -218,7 +223,7 @@ export default function ProfilePage() {
           >
             Friends
             {friendRequests.received.length > 0 && (
-              <span className="tab-badge">{friendRequests.received.length}</span>
+              <span className="tab-badge notification">{friendRequests.received.length}</span>
             )}
           </button>
         </div>
@@ -335,45 +340,90 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Friend Requests */}
-            {friendRequests.received.length > 0 && (
-              <div className="section">
-                <h3 className="section-subtitle">Friend Requests</h3>
-                {loadingFriends ? (
-                  <div className="loading-text">Loading...</div>
-                ) : (
-                  <div className="friends-list">
-                    {friendRequests.received.map((request) => (
-                      <div key={request.id} className="friend-item">
-                        <div className="friend-avatar">
-                          {getAvatarEmoji(request.sender_profile?.avatar_selection || 'avatar1')}
+            {/* Friend Requests - Always show section */}
+            <div className="section">
+              <h3 className="section-subtitle">
+                Friend Requests
+                {friendRequests.received.length > 0 && (
+                  <span className="tab-badge notification">{friendRequests.received.length}</span>
+                )}
+              </h3>
+              {loadingFriends ? (
+                <div className="loading-text">Loading...</div>
+              ) : friendRequests.received.length === 0 ? (
+                <div className="empty-state">
+                  <p>No pending friend requests</p>
+                </div>
+              ) : (
+                <div className="friends-list friend-requests-list">
+                  {friendRequests.received.map((request) => (
+                    <div key={request.id} className="friend-item friend-request-item">
+                      <div className="friend-avatar">
+                        {getAvatarEmoji(request.sender_profile?.avatar_selection || 'avatar1')}
+                      </div>
+                      <div className="friend-info">
+                        <div className="friend-username">
+                          {request.sender_profile?.username || 'No username'}
                         </div>
-                        <div className="friend-info">
-                          <div className="friend-username">
-                            {request.sender_profile?.username || 'No username'}
-                          </div>
-                          <div className="friend-name">
-                            {request.sender_profile?.name || request.sender_id.slice(0, 8)}
-                          </div>
+                        <div className="friend-name">
+                          {request.sender_profile?.name || request.sender_id.slice(0, 8)}
                         </div>
-                        <div className="friend-actions">
-                          <button
-                            className="action-btn"
-                            onClick={() => handleAcceptRequest(request.id)}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className="action-btn secondary"
-                            onClick={() => handleRejectRequest(request.id)}
-                          >
-                            Decline
-                          </button>
+                        <div className="friend-date">
+                          Sent {new Date(request.created_at).toLocaleDateString()}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="friend-actions">
+                        <button
+                          className="action-btn primary-action"
+                          onClick={() => handleAcceptRequest(request.id)}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="action-btn secondary"
+                          onClick={() => handleRejectRequest(request.id)}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Sent Friend Requests */}
+            {friendRequests.sent.length > 0 && (
+              <div className="section">
+                <h3 className="section-subtitle">Sent Friend Requests ({friendRequests.sent.length})</h3>
+                <div className="friends-list">
+                  {friendRequests.sent.map((request) => (
+                    <div key={request.id} className="friend-item">
+                      <div className="friend-avatar">
+                        {getAvatarEmoji(request.receiver_profile?.avatar_selection || 'avatar1')}
+                      </div>
+                      <div className="friend-info">
+                        <div className="friend-username">
+                          {request.receiver_profile?.username || 'No username'}
+                        </div>
+                        <div className="friend-name">
+                          {request.receiver_profile?.name || request.receiver_id.slice(0, 8)}
+                        </div>
+                        <div className="friend-date">
+                          Sent {new Date(request.created_at).toLocaleDateString()} • Pending
+                        </div>
+                      </div>
+                      <div className="friend-actions">
+                        <button
+                          className="action-btn secondary"
+                          onClick={() => handleRejectRequest(request.id)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
