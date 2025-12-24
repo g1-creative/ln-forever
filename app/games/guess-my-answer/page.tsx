@@ -247,7 +247,7 @@ export default function GuessMyAnswerPage() {
   }, [currentLobby, supabase, lobbyView]);
 
   const loadGameState = async () => {
-    if (!currentLobby || !user) return;
+    if (!currentLobby || !user || !supabase) return;
 
     try {
       const { data: gameStateData } = await (supabase
@@ -409,7 +409,7 @@ export default function GuessMyAnswerPage() {
   };
 
   const handleCategorySelect = async (categoryId: string) => {
-    if (!currentLobby || !user) return;
+    if (!currentLobby || !user || !supabase) return;
     // Only host can select category
     if (currentLobby.host_id !== user.id) return;
 
@@ -466,7 +466,7 @@ export default function GuessMyAnswerPage() {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedAnswer || !currentLobby || !user) return;
+    if (!selectedAnswer || !currentLobby || !user || !supabase) return;
 
     setLoading(true);
     try {
@@ -496,7 +496,7 @@ export default function GuessMyAnswerPage() {
   };
 
   const handleSubmitGuess = async () => {
-    if (!selectedGuess || !currentLobby || !user) return;
+    if (!selectedGuess || !currentLobby || !user || !supabase) return;
 
     setLoading(true);
     try {
@@ -528,7 +528,7 @@ export default function GuessMyAnswerPage() {
   };
 
   const handleNextQuestion = async () => {
-    if (!currentLobby || !user) return;
+    if (!currentLobby || !user || !supabase) return;
 
     setLoading(true);
     try {
@@ -614,7 +614,7 @@ export default function GuessMyAnswerPage() {
   };
 
   const handlePlayAgain = async () => {
-    if (!currentLobby || !user) return;
+    if (!currentLobby || !user || !supabase) return;
     if (currentLobby.host_id !== user.id) return;
 
     setLoading(true);
