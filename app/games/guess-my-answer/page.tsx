@@ -206,10 +206,37 @@ export default function GuessMyAnswerPage() {
     // Initialize previous status
     previousStatusRef.current = currentLobby.status;
     
-    // If lobby is already playing, start the game immediately
-    if (currentLobby.status === 'playing' && lobbyView === 'lobby') {
-      console.log('Lobby is already playing, starting game...');
-      startGame(currentLobby);
+    // If lobby is already playing, check if game state exists
+    if (currentLobby.status === 'playing') {
+      if (lobbyView === 'lobby') {
+        console.log('Lobby is already playing, starting game...');
+        startGame(currentLobby);
+      } else if (lobbyView === 'playing') {
+        // Load existing game state
+        (async () => {
+          try {
+            const { data: gameStateData } = await (supabase
+              .from('guess_my_answer_state') as any)
+              .select('game_data')
+              .eq('lobby_id', currentLobby.id)
+              .single();
+            
+            if (gameStateData?.game_data) {
+              const gameData = gameStateData.game_data;
+              if (gameData.gameState) setGameState(gameData.gameState);
+              if (gameData.scenario) setCurrentScenario(gameData.scenario);
+              if (gameData.answerOptions) setAnswerOptions(gameData.answerOptions);
+              if (gameData.answererId) {
+                setAnswererId(gameData.answererId);
+                setIsAnswerer(gameData.answererId === user?.id);
+              }
+              if (gameData.round) setRound(gameData.round);
+            }
+          } catch (error) {
+            console.error('Error loading game state:', error);
+          }
+        })();
+      }
     }
 
     // Clean up existing subscription
@@ -254,6 +281,70 @@ export default function GuessMyAnswerPage() {
           setTimeout(() => {
             refreshLobby();
           }, 100);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'guess_my_answer_state',
+          filter: `lobby_id=eq.${currentLobby.id}`,
+        },
+        async (payload: any) => {
+          console.log('Game state change detected:', payload);
+          const gameData = payload.new?.game_data || payload.record?.game_data;
+          if (gameData) {
+            // Update game state from database
+            if (gameData.gameState && gameData.gameState !== gameState) {
+              setGameState(gameData.gameState);
+            }
+            // Update other game data if needed
+            if (gameData.scenario && !currentScenario) {
+              setCurrentScenario(gameData.scenario);
+            }
+            if (gameData.answerOptions && answerOptions.length === 0) {
+              setAnswerOptions(gameData.answerOptions);
+            }
+            if (gameData.answererId && gameData.answererId !== answererId) {
+              setAnswererId(gameData.answererId);
+              setIsAnswerer(gameData.answererId === user?.id);
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'guess_my_answer_state',
+          filter: `lobby_id=eq.${currentLobby.id}`,
+        },
+        async (payload: any) => {
+          console.log('Game state change detected:', payload);
+          const gameData = payload.new?.game_data || payload.record?.game_data;
+          if (gameData) {
+            // Update game state from database
+            if (gameData.gameState && gameData.gameState !== gameState) {
+              console.log('Updating game state to:', gameData.gameState);
+              setGameState(gameData.gameState);
+            }
+            // Update other game data if needed
+            if (gameData.scenario && !currentScenario) {
+              setCurrentScenario(gameData.scenario);
+            }
+            if (gameData.answerOptions && answerOptions.length === 0) {
+              setAnswerOptions(gameData.answerOptions);
+            }
+            if (gameData.answererId && gameData.answererId !== answererId) {
+              setAnswererId(gameData.answererId);
+              setIsAnswerer(gameData.answererId === user?.id);
+            }
+            if (gameData.selectedAnswer && !selectedAnswer) {
+              setSelectedAnswer(gameData.selectedAnswer);
+            }
+          }
         }
       )
       .on(
@@ -414,17 +505,73 @@ export default function GuessMyAnswerPage() {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedAnswer || !currentLobby || !currentScenario) return;
+    if (!selectedAnswer || !currentLobby || !currentScenario || !user) return;
 
-    // Store answer (in a real implementation, this would go to the database)
-    setGameState('guessing');
+    try {
+      // Store answer in database
+      const { error } = await (supabase
+        .from('guess_my_answer_state') as any)
+        .upsert({
+          lobby_id: currentLobby.id,
+          game_data: {
+            gameState: 'guessing',
+            round: round,
+            answererId: answererId,
+            selectedAnswer: selectedAnswer,
+            scenario: currentScenario,
+            answerOptions: answerOptions,
+          },
+          current_turn_user_id: answererId,
+        }, {
+          onConflict: 'lobby_id'
+        });
+
+      if (error) throw error;
+      
+      // Update local state
+      setGameState('guessing');
+    } catch (error: any) {
+      console.error('Error submitting answer:', error);
+      // Still update local state as fallback
+      setGameState('guessing');
+    }
   };
 
   const handleSubmitGuess = async () => {
-    if (!selectedGuess || !currentLobby) return;
+    if (!selectedGuess || !currentLobby || !user) return;
 
-    // Store guess and reveal answer
-    setGameState('revealed');
+    try {
+      // Store guess in database
+      const { data: currentState } = await (supabase
+        .from('guess_my_answer_state') as any)
+        .select('game_data')
+        .eq('lobby_id', currentLobby.id)
+        .single();
+
+      const gameData = currentState?.game_data || {};
+      
+      const { error } = await (supabase
+        .from('guess_my_answer_state') as any)
+        .upsert({
+          lobby_id: currentLobby.id,
+          game_data: {
+            ...gameData,
+            gameState: 'revealed',
+            selectedGuess: selectedGuess,
+          },
+        }, {
+          onConflict: 'lobby_id'
+        });
+
+      if (error) throw error;
+      
+      // Update local state
+      setGameState('revealed');
+    } catch (error: any) {
+      console.error('Error submitting guess:', error);
+      // Still update local state as fallback
+      setGameState('revealed');
+    }
   };
 
   const handleNextRound = () => {
