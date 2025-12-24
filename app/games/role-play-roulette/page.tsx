@@ -89,128 +89,144 @@ export default function RolePlayRoulettePage() {
   return (
     <ProtectedRoute>
       <div className="container">
-        <div className="page-header">
-          <Link href="/games" className="back-link">
-            ← Back to Games
-          </Link>
-          <Image 
-            src="/images/ln_logo_favicon.png" 
-            alt="LN Forever" 
-            width={64} 
-            height={64}
-            className="page-header-logo"
-          />
-          <h1>Role-Play Roulette</h1>
-          <p>Practice English conversation with fun, interactive scenarios</p>
-        </div>
-
-        <div className="game-stats-bar">
-          <div className="stat-badge">
-            <span className="stat-label">Available</span>
-            <span className="stat-value">{availableCount}</span>
-          </div>
-          <div className="stat-badge">
-            <span className="stat-label">Suggested Time</span>
-            <span className="stat-value" style={{ color: difficultyInfo[selectedDifficulty].color }}>
-              {difficultyInfo[selectedDifficulty].time}
-            </span>
-          </div>
-        </div>
-
-        <div className="section">
-          <div className="section-title">Choose Difficulty</div>
-          <div className="difficulty-selector">
-            <button
-              className={`difficulty-btn easy ${selectedDifficulty === 'easy' ? 'active' : ''}`}
-              onClick={() => setSelectedDifficulty('easy')}
-            >
-              <span className="difficulty-label">Easy</span>
-              <span className="difficulty-time">{difficultyInfo.easy.time}</span>
-            </button>
-            <button
-              className={`difficulty-btn medium ${selectedDifficulty === 'medium' ? 'active' : ''}`}
-              onClick={() => setSelectedDifficulty('medium')}
-            >
-              <span className="difficulty-label">Medium</span>
-              <span className="difficulty-time">{difficultyInfo.medium.time}</span>
-            </button>
-            <button
-              className={`difficulty-btn hard ${selectedDifficulty === 'hard' ? 'active' : ''}`}
-              onClick={() => setSelectedDifficulty('hard')}
-            >
-              <span className="difficulty-label">Hard</span>
-              <span className="difficulty-time">{difficultyInfo.hard.time}</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="section">
-          <div className="section-title">Choose Category</div>
-          <div className="category-selector">
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                className={`category-btn ${selectedCategory === cat.value ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat.value)}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="spin-container">
-          {isSpinning && (
-            <div className="roulette-wheel">
-              <div 
-                className="roulette-spinner"
-                style={{ 
-                  transform: `rotate(${spinProgress * 360 * 3}deg)`,
-                  transition: 'transform 0.1s linear'
-                }}
-              >
-                <div className="roulette-segment"></div>
-                <div className="roulette-segment"></div>
-                <div className="roulette-segment"></div>
-                <div className="roulette-segment"></div>
-                <div className="roulette-segment"></div>
-                <div className="roulette-segment"></div>
-              </div>
-              <div className="roulette-pointer"></div>
+        {!currentScenario && !showNoScenario && (
+          <>
+            <div className="page-header">
+              <Link href="/games" className="back-link">
+                ← Back to Games
+              </Link>
+              <Image 
+                src="/images/ln_logo_favicon.png" 
+                alt="LN Forever" 
+                width={64} 
+                height={64}
+                className="page-header-logo"
+                priority
+              />
+              <h1>Role-Play Roulette</h1>
+              <p>Practice English conversation with fun, interactive scenarios</p>
             </div>
-          )}
-          <button 
-            className={`spin-button ${isSpinning ? 'spinning' : ''}`} 
-            onClick={handleSpin}
-            disabled={isSpinning || availableCount === 0}
-          >
-            {isSpinning ? (
-              <>
-                <span className="spin-text">Spinning...</span>
-                <div className="spin-loader"></div>
-              </>
-            ) : (
-              <>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                </svg>
-                <span>Spin Scenario</span>
-              </>
-            )}
-          </button>
-        </div>
 
-        {currentScenario && (
-          <ScenarioCard
-            scenario={currentScenario}
-            onSwapRoles={handleSwapRoles}
-            rolesSwapped={rolesSwapped}
-            onNextScenario={handleNextScenario}
-            difficulty={selectedDifficulty}
-          />
+            <div className="game-stats-bar">
+              <div className="stat-badge">
+                <span className="stat-label">Available</span>
+                <span className="stat-value">{availableCount}</span>
+              </div>
+              <div className="stat-badge">
+                <span className="stat-label">Suggested Time</span>
+                <span className="stat-value" style={{ color: difficultyInfo[selectedDifficulty].color }}>
+                  {difficultyInfo[selectedDifficulty].time}
+                </span>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-title">Choose Difficulty</div>
+              <div className="difficulty-selector">
+                <button
+                  className={`difficulty-btn easy ${selectedDifficulty === 'easy' ? 'active' : ''}`}
+                  onClick={() => setSelectedDifficulty('easy')}
+                >
+                  <span className="difficulty-label">Easy</span>
+                  <span className="difficulty-time">{difficultyInfo.easy.time}</span>
+                </button>
+                <button
+                  className={`difficulty-btn medium ${selectedDifficulty === 'medium' ? 'active' : ''}`}
+                  onClick={() => setSelectedDifficulty('medium')}
+                >
+                  <span className="difficulty-label">Medium</span>
+                  <span className="difficulty-time">{difficultyInfo.medium.time}</span>
+                </button>
+                <button
+                  className={`difficulty-btn hard ${selectedDifficulty === 'hard' ? 'active' : ''}`}
+                  onClick={() => setSelectedDifficulty('hard')}
+                >
+                  <span className="difficulty-label">Hard</span>
+                  <span className="difficulty-time">{difficultyInfo.hard.time}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="section">
+              <div className="section-title">Choose Category</div>
+              <div className="category-selector">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    className={`category-btn ${selectedCategory === cat.value ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(cat.value)}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="spin-container">
+              {isSpinning && (
+                <div className="roulette-wheel">
+                  <div 
+                    className="roulette-spinner"
+                    style={{ 
+                      transform: `rotate(${spinProgress * 360 * 3}deg)`,
+                      transition: 'transform 0.1s linear'
+                    }}
+                  >
+                    <div className="roulette-segment"></div>
+                    <div className="roulette-segment"></div>
+                    <div className="roulette-segment"></div>
+                    <div className="roulette-segment"></div>
+                    <div className="roulette-segment"></div>
+                    <div className="roulette-segment"></div>
+                  </div>
+                  <div className="roulette-pointer"></div>
+                </div>
+              )}
+              <button 
+                className={`spin-button ${isSpinning ? 'spinning' : ''}`} 
+                onClick={handleSpin}
+                disabled={isSpinning || availableCount === 0}
+              >
+                {isSpinning ? (
+                  <>
+                    <span className="spin-text">Spinning...</span>
+                    <div className="spin-loader"></div>
+                  </>
+                ) : (
+                  <>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                    <span>Spin Scenario</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </>
         )}
 
-        {showNoScenario && (
+        {currentScenario && (
+          <div className="scenario-view-mode">
+            <button 
+              className="back-to-spin-btn"
+              onClick={() => {
+                setCurrentScenario(null);
+                setRolesSwapped(false);
+              }}
+            >
+              ← Back to Spin
+            </button>
+            <ScenarioCard
+              scenario={currentScenario}
+              onSwapRoles={handleSwapRoles}
+              rolesSwapped={rolesSwapped}
+              onNextScenario={handleNextScenario}
+              difficulty={selectedDifficulty}
+            />
+          </div>
+        )}
+
+        {showNoScenario && !currentScenario && (
           <div className="scenario-card show no-scenario-card">
             <div className="no-scenario">
               <div className="no-scenario-icon">🎯</div>

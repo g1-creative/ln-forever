@@ -1565,6 +1565,58 @@ main {
   .game-meta-item {
     font-size: 0.75rem;
   }
+
+  /* Role-play roulette mobile optimizations */
+  .scenario-view-mode {
+    padding: var(--space-sm);
+    padding-top: calc(var(--space-sm) + 60px);
+  }
+
+  .scenario-view-mode .roles-container {
+    flex-direction: row;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-md);
+  }
+
+  .scenario-view-mode .role-section {
+    padding: var(--space-sm);
+    margin-bottom: 0;
+    font-size: 0.8125rem;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scenario-view-mode .role-description {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    flex: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .scenario-view-mode .role-header {
+    margin-bottom: var(--space-xs);
+  }
+
+  .scenario-view-mode .scenario-card {
+    padding: var(--space-sm);
+    margin-top: 0;
+  }
+
+  .scenario-view-mode .scenario-title {
+    font-size: 1.1rem;
+  }
+
+  .scenario-view-mode .scenario-actions-bar {
+    margin-top: var(--space-md);
+    flex-direction: column;
+  }
+
+  .scenario-view-mode .scenario-actions-bar .action-btn {
+    width: 100%;
+    min-width: auto;
+  }
 }
 
 /* ============================================
@@ -2509,9 +2561,122 @@ main {
   font-weight: 700;
 }
 
+/* Scenario View Mode - Full Screen on Mobile */
+.scenario-view-mode {
+  width: 100%;
+  min-height: 100vh;
+  padding: var(--space-md);
+  padding-top: calc(var(--space-md) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+}
+
+.back-to-spin-btn {
+  position: fixed;
+  top: calc(var(--space-md) + env(safe-area-inset-top, 0px));
+  left: var(--space-md);
+  z-index: 100;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  color: var(--charcoal);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all var(--transition-base);
+  touch-action: manipulation;
+}
+
+.back-to-spin-btn:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.scenario-view-mode .scenario-card {
+  margin-top: 50px;
+  max-width: 100%;
+}
+
 /* Enhanced Roles Container */
 .roles-container {
   margin-bottom: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Desktop: Keep side by side roles */
+@media (min-width: 769px) {
+  .scenario-view-mode .roles-container {
+    flex-direction: row;
+    gap: var(--space-md);
+  }
+
+  .scenario-view-mode .role-divider {
+    display: none;
+  }
+}
+
+/* Mobile: Side by side roles */
+@media (max-width: 768px) {
+  .scenario-view-mode .roles-container {
+    flex-direction: row;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+  }
+
+  .scenario-view-mode .role-section {
+    flex: 1;
+    margin-bottom: 0;
+    padding: var(--space-md);
+    min-height: auto;
+  }
+
+  .scenario-view-mode .role-header {
+    margin-bottom: var(--space-sm);
+  }
+
+  .scenario-view-mode .role-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .scenario-view-mode .role-label {
+    font-size: 0.75rem;
+    margin-bottom: var(--space-xs);
+  }
+
+  .scenario-view-mode .role-number {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+  }
+
+  /* Hide unnecessary elements on mobile */
+  .scenario-view-mode .scenario-header .scenario-objective {
+    display: none;
+  }
+
+  .scenario-view-mode .conversation-starters {
+    display: none;
+  }
+
+  .scenario-view-mode .hints-section {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+  }
+
+  .scenario-view-mode .scenario-title {
+    font-size: 1.25rem;
+    margin-bottom: var(--space-sm);
+  }
+
+  .scenario-view-mode .scenario-card {
+    padding: var(--space-md);
+  }
 }
 
 .role-header {
@@ -2536,7 +2701,7 @@ main {
 }
 
 .role-divider {
-  display: flex;
+  display: none; /* Hide divider on mobile, show on desktop */
   align-items: center;
   gap: var(--space-md);
   margin: var(--space-lg) 0;
