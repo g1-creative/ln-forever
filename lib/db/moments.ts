@@ -224,11 +224,10 @@ export async function uploadMomentImage(file: File): Promise<string> {
 
   const fileExt = file.name.split('.').pop();
   const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-  const filePath = `moments/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from('moments')
-    .upload(filePath, file, {
+    .upload(fileName, file, {
       cacheControl: '3600',
       upsert: false,
     });
@@ -237,7 +236,7 @@ export async function uploadMomentImage(file: File): Promise<string> {
 
   const { data: { publicUrl } } = supabase.storage
     .from('moments')
-    .getPublicUrl(filePath);
+    .getPublicUrl(fileName);
 
   return publicUrl;
 }

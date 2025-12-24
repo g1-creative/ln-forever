@@ -1,10 +1,15 @@
 -- Our Moments Timeline Feature
 -- 
--- NOTE: After running this migration, you need to create a Supabase Storage bucket:
+-- IMPORTANT: Before running this migration, create the storage bucket:
 -- 1. Go to Supabase Dashboard → Storage
--- 2. Create a new bucket named "moments"
--- 3. Set it to Public (or configure RLS policies for authenticated users)
--- 4. The bucket will store uploaded moment images
+-- 2. Click "New bucket"
+-- 3. Name: "moments"
+-- 4. Public bucket: YES (for MVP - allows reading images)
+-- 5. File size limit: 5MB (recommended)
+-- 6. Allowed MIME types: image/* (optional)
+-- 7. Click "Create bucket"
+--
+-- After creating the bucket, run this migration to set up storage policies.
 
 -- Moments table
 CREATE TABLE IF NOT EXISTS moments (
@@ -74,4 +79,45 @@ DROP POLICY IF EXISTS "Users can delete their own moments" ON moments;
 CREATE POLICY "Users can delete their own moments"
   ON moments FOR DELETE
   USING (auth.uid() = user_id);
+
+-- Storage Bucket Policies for moments
+-- These policies allow authenticated users to upload, read, and delete their own files
+-- Note: If bucket is public, SELECT policy may not be needed, but INSERT/DELETE still require policies
+
+-- Allow authenticated users to upload files to their own folder
+DROP POLICY IF EXISTS "Users can upload to their own folder" ON storage.objects;
+CREATE POLICY "Users can upload to their own folder"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'moments' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- Allow authenticated users to read files (if bucket is not public, uncomment this)
+-- DROP POLICY IF EXISTS "Users can read moments images" ON storage.objects;
+-- CREATE POLICY "Users can read moments images"
+-- ON storage.objects FOR SELECT
+-- TO authenticated
+-- USING (
+--   bucket_id = 'moments' AND
+--   (
+--     (storage.foldername(name))[1] = auth.uid()::text OR
+--     EXISTS (
+--       SELECT 1 FROM moments m
+--       WHERE m.image_url LIKE '%' || name || '%'
+--       AND (m.user_id = auth.uid() OR m.partner_id = auth.uid())
+--     )
+--   )
+-- );
+
+-- Allow authenticated users to delete files from their own folder
+DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
+CREATE POLICY "Users can delete their own files"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'moments' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+);
 
