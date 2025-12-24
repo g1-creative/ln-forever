@@ -30,6 +30,7 @@ export default function GameCard({ game }: GameCardProps) {
           {game.icon === 'conversation' && <ConversationIcon />}
           {game.icon === 'choices' && <ChoicesIcon />}
           {game.icon === 'guess' && <GuessIcon />}
+          {game.icon === 'questions' && <QuestionsIcon />}
           {game.icon === 'story' && <StoryIcon />}
           {game.icon === 'dare' && <DareIcon />}
           {game.icon === 'words' && <WordsIcon />}
@@ -99,6 +100,18 @@ function GuessIcon() {
       <circle cx="12" cy="12" r="10" />
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function QuestionsIcon() {
+  return (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+      <circle cx="8" cy="8" r="1.5" />
+      <circle cx="16" cy="8" r="1.5" />
     </svg>
   );
 }
