@@ -1690,27 +1690,93 @@ main {
     height: 70px !important;
   }
 
-  /* Game cards */
+  /* Game cards - optimized for 390px */
   .games-grid {
     gap: var(--space-sm);
+    margin-top: var(--space-sm);
   }
 
   .game-card {
     padding: var(--space-md);
+    min-height: auto;
+    border-radius: var(--radius-lg);
   }
 
-  .game-card-description {
-    font-size: 0.85rem;
+  .game-card-header {
+    margin-bottom: var(--space-sm);
+    gap: var(--space-xs);
+    flex-wrap: wrap;
   }
 
   .game-card-icon {
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
   }
 
   .game-card-icon svg {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .game-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  .game-card-content {
+    margin-bottom: var(--space-sm);
+  }
+
+  .game-card-title {
+    font-size: 1.1rem;
+    margin-bottom: var(--space-xs);
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .game-card-description {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    margin-bottom: var(--space-sm);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .game-card-meta {
+    gap: 4px;
+    margin-top: var(--space-xs);
+  }
+
+  .game-meta-item {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .game-meta-label {
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .game-meta-value {
+    font-size: 0.75rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .game-card-footer {
+    padding-top: var(--space-sm);
+    margin-top: var(--space-xs);
+  }
+
+  .game-card-action {
+    font-size: 0.8rem;
+    padding: var(--space-xs) 0;
   }
 
   /* Buttons and actions */
@@ -2352,6 +2418,7 @@ main {
   margin-bottom: var(--space-lg);
   gap: var(--space-sm);
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .game-card-icon {
@@ -2401,6 +2468,8 @@ main {
   color: var(--charcoal);
   margin-bottom: var(--space-sm);
   letter-spacing: -0.02em;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .game-card-description {
@@ -2422,16 +2491,23 @@ main {
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .game-meta-label {
   color: var(--gray-500);
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .game-meta-value {
   color: var(--charcoal);
   font-weight: 600;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: right;
 }
 
 .game-card-footer {
