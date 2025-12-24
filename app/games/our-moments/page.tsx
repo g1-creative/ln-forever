@@ -94,6 +94,8 @@ export default function OurMomentsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [lightboxImage, setLightboxImage] = useState<MomentWithProfiles | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   
   // Add moment form state
   const [newMomentImage, setNewMomentImage] = useState<File | null>(null);
@@ -304,6 +306,37 @@ export default function OurMomentsPage() {
   const selectedPartnerProfile = friends.find(f => f.friend_id === selectedPartner);
   const isMyMoment = (moment: MomentWithProfiles) => moment.user_id === user?.id;
 
+  const openLightbox = (moment: MomentWithProfiles, index: number) => {
+    setLightboxImage(moment);
+    setLightboxIndex(index);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+  };
+
+  const navigateLightbox = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'next' 
+      ? Math.min(lightboxIndex + 1, moments.length - 1)
+      : Math.max(lightboxIndex - 1, 0);
+    setLightboxIndex(newIndex);
+    setLightboxImage(moments[newIndex]);
+  };
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') navigateLightbox('prev');
+      if (e.key === 'ArrowRight') navigateLightbox('next');
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxImage, lightboxIndex, moments]);
+
   return (
     <ProtectedRoute>
       <style>{styles}</style>
@@ -470,7 +503,10 @@ export default function OurMomentsPage() {
                                 <div className={`md:w-1/2 ${isLeft ? 'md:pr-12' : 'md:pl-12'}`}>
                                   <div className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
                                     {/* Image */}
-                                    <div className="relative w-full h-72 md:h-80 bg-gradient-to-br from-pink-100 to-purple-100 group overflow-hidden">
+                                    <div 
+                                      className="relative w-full h-72 md:h-80 bg-gradient-to-br from-pink-100 to-purple-100 group overflow-hidden cursor-pointer"
+                                      onClick={() => openLightbox(moment, index)}
+                                    >
                                       <Image
                                         src={moment.image_url}
                                         alt={moment.caption}
@@ -481,6 +517,14 @@ export default function OurMomentsPage() {
                                       {/* Date Badge */}
                                       <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
                                         <p className="text-xs font-bold text-purple-600">{getRelativeTime(moment.moment_date)}</p>
+                                      </div>
+                                      {/* Hover overlay */}
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 rounded-full p-3">
+                                          <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m0 0v6m0-6h6m-6 0H4" />
+                                          </svg>
+                                        </div>
                                       </div>
                                     </div>
 
@@ -724,6 +768,118 @@ export default function OurMomentsPage() {
                   >
                     Cancel
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image Lightbox Modal */}
+          {lightboxImage && (
+            <div 
+              className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in-up"
+              onClick={closeLightbox}
+            >
+              <div className="relative w-full h-full max-w-7xl max-h-screen flex items-center justify-center">
+                {/* Close button */}
+                <button
+                  onClick={closeLightbox}
+                  className="absolute top-4 right-4 z-10 text-white hover:text-gray-300 transition-colors p-2 hover:bg-white/10 rounded-full"
+                  title="Close (Esc)"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                {/* Navigation buttons */}
+                {lightboxIndex > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigateLightbox('prev');
+                    }}
+                    className="absolute left-4 z-10 text-white hover:text-gray-300 transition-all p-3 hover:bg-white/10 rounded-full transform hover:scale-110"
+                    title="Previous (←)"
+                  >
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                )}
+
+                {lightboxIndex < moments.length - 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigateLightbox('next');
+                    }}
+                    className="absolute right-4 z-10 text-white hover:text-gray-300 transition-all p-3 hover:bg-white/10 rounded-full transform hover:scale-110"
+                    title="Next (→)"
+                  >
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Image container */}
+                <div 
+                  className="relative w-full h-full flex items-center justify-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="relative max-w-full max-h-full">
+                    <Image
+                      src={lightboxImage.image_url}
+                      alt={lightboxImage.caption}
+                      width={1200}
+                      height={800}
+                      className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+                      unoptimized
+                    />
+                  </div>
+
+                  {/* Image info overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 rounded-b-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-4xl">
+                        {AVATAR_EMOJIS[lightboxImage.user_profile?.avatar_selection || 'avatar1']}
+                      </span>
+                      <div>
+                        <p className="font-bold text-white text-lg">
+                          {lightboxImage.user_profile?.name || lightboxImage.user_profile?.username || 'Unknown'}
+                        </p>
+                        <p className="text-sm text-gray-300">{formatDate(lightboxImage.moment_date)}</p>
+                      </div>
+                    </div>
+                    <p className="text-white text-base leading-relaxed">{lightboxImage.caption}</p>
+                    
+                    {/* Partner comment in lightbox */}
+                    {lightboxImage.partner_comment && (
+                      <div className="mt-4 pt-4 border-t border-white/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">
+                            {AVATAR_EMOJIS[lightboxImage.partner_profile?.avatar_selection || 'avatar1']}
+                          </span>
+                          <p className="font-bold text-purple-300">
+                            {lightboxImage.partner_profile?.name || lightboxImage.partner_profile?.username || 'Partner'}
+                          </p>
+                        </div>
+                        <p className="text-purple-200 text-sm">{lightboxImage.partner_comment}</p>
+                      </div>
+                    )}
+
+                    {/* Counter */}
+                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full">
+                      <p className="text-white text-sm font-medium">
+                        {lightboxIndex + 1} / {moments.length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hint text */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/60 text-sm">
+                  <span className="hidden md:inline">Use arrow keys or </span>Click outside to close
                 </div>
               </div>
             </div>
