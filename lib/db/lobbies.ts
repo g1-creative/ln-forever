@@ -271,25 +271,25 @@ export async function inviteFriendToLobby(lobbyId: string, friendId: string): Pr
   }
 
   // Check if already a participant
-  const { data: existingParticipant } = await (supabase
+  const { data: existingParticipant, error: participantCheckError } = await (supabase
     .from('lobby_participants') as any)
     .select('id')
     .eq('lobby_id', lobbyId)
     .eq('user_id', friendId)
-    .single();
+    .maybeSingle();
 
   if (existingParticipant) {
     throw new Error('Friend is already in the lobby');
   }
 
   // Check if already invited
-  const { data: existingInvitation } = await (supabase
+  const { data: existingInvitation, error: invitationCheckError } = await (supabase
     .from('lobby_invitations') as any)
     .select('id')
     .eq('lobby_id', lobbyId)
     .eq('invitee_id', friendId)
     .eq('status', 'pending')
-    .single();
+    .maybeSingle();
 
   if (existingInvitation) {
     throw new Error('Friend already has a pending invitation');
@@ -305,7 +305,13 @@ export async function inviteFriendToLobby(lobbyId: string, friendId: string): Pr
       status: 'pending',
     });
 
-  if (error) throw error;
+  if (error) {
+    // Handle duplicate key error (409)
+    if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+      throw new Error('Friend already has a pending invitation');
+    }
+    throw error;
+  }
 }
 
 /**

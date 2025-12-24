@@ -336,15 +336,6 @@ export default function GuessMyAnswerPage() {
       await setReadyStatus(currentLobby.id, newReadyStatus);
       const updated = await getLobby(currentLobby.id);
       if (updated) setCurrentLobby(updated);
-
-      // Check if all players are ready
-      if (updated && updated.participants.length === updated.max_players) {
-        const allReady = updated.participants.every(p => p.is_ready);
-        if (allReady && updated.status === 'waiting') {
-          await updateLobbyStatus(updated.id, 'playing');
-          startGame(updated);
-        }
-      }
     } catch (error: any) {
       alert(error.message || 'Error updating ready status');
     }
@@ -467,17 +458,31 @@ export default function GuessMyAnswerPage() {
 
         {lobbyView === 'lobby' && currentLobby && (
           <div className="section">
-            <div className="lobby-header">
+            <div className="lobby-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <h2 className="section-title">Lobby</h2>
-              {currentLobby.host_id === user?.id && currentLobby.participants.length < currentLobby.max_players && (
-                <button
-                  className="action-btn primary-action"
-                  onClick={() => setShowInviteModal(true)}
-                  style={{ marginLeft: 'auto' }}
-                >
-                  Invite Friend
-                </button>
-              )}
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {currentLobby.host_id === user?.id && (
+                  <button
+                    className="action-btn secondary"
+                    onClick={async () => {
+                      const updated = await getLobby(currentLobby.id);
+                      if (updated) setCurrentLobby(updated);
+                    }}
+                    style={{ padding: '0.5rem 1rem' }}
+                  >
+                    🔄 Refresh
+                  </button>
+                )}
+                {currentLobby.host_id === user?.id && currentLobby.participants.length < currentLobby.max_players && (
+                  <button
+                    className="action-btn primary-action"
+                    onClick={() => setShowInviteModal(true)}
+                    style={{ padding: '0.5rem 1rem' }}
+                  >
+                    Invite Friend
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="lobby-participants">
@@ -513,6 +518,37 @@ export default function GuessMyAnswerPage() {
             </div>
 
             <div className="lobby-actions-bar">
+              {currentLobby.participants.length >= currentLobby.max_players && 
+               currentLobby.participants.every(p => p.is_ready) &&
+               currentLobby.host_id === user?.id && (
+                <button
+                  className="action-btn primary-action"
+                  onClick={async () => {
+                    try {
+                      await updateLobbyStatus(currentLobby.id, 'playing');
+                      const updated = await getLobby(currentLobby.id);
+                      if (updated) {
+                        setCurrentLobby(updated);
+                        await startGame(updated);
+                      }
+                    } catch (error: any) {
+                      alert(error.message || 'Error starting game');
+                    }
+                  }}
+                  style={{ marginBottom: '0.5rem', width: '100%', fontSize: '1.1rem', padding: '0.75rem' }}
+                >
+                  🎮 Start Game
+                </button>
+              )}
+              {currentLobby.participants.length >= currentLobby.max_players && 
+               currentLobby.participants.every(p => p.is_ready) &&
+               currentLobby.host_id !== user?.id && (
+                <div style={{ marginBottom: '0.5rem', padding: '0.75rem', backgroundColor: '#e7f3ff', borderRadius: '6px', textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontWeight: 'bold', color: '#0066cc' }}>
+                    Waiting for host to start the game...
+                  </p>
+                </div>
+              )}
               <button
                 className="action-btn primary-action"
                 onClick={handleToggleReady}
