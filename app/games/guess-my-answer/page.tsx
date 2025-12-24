@@ -295,8 +295,14 @@ export default function GuessMyAnswerPage() {
     setError(null);
     try {
       const lobby = await createLobby('guess-my-answer', 2);
-      setCurrentLobby(lobby);
-      setLobbyView('lobby');
+      // Fetch the full lobby with participants
+      const fullLobby = await getLobby(lobby.id);
+      if (fullLobby) {
+        setCurrentLobby(fullLobby);
+        setLobbyView('lobby');
+      } else {
+        throw new Error('Failed to load lobby details');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to create lobby');
     } finally {
