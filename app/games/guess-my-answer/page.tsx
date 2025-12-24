@@ -19,7 +19,8 @@ import {
   declineLobbyInvitation,
   LobbyWithParticipants,
 } from '@/lib/db/lobbies';
-import { getRandomScenario, Scenario } from '@/lib/scenarios';
+import { getRandomScenario } from '@/lib/scenarios';
+import { Scenario } from '@/types';
 import { getFriends } from '@/lib/db/friends';
 import { CheckCircleIcon, XCircleIcon, PlayIcon } from '@/components/Icons';
 
