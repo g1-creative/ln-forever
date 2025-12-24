@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -62,85 +62,116 @@ export default function GuessMyAnswerPage() {
   const [round, setRound] = useState(1);
   const supabase = getSupabaseClient();
   const channelRef = useRef<any>(null);
+  const invitationChannelRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (user) {
-      loadFriends();
-      loadInvitations();
-      // Poll for new invitations every 5 seconds
-      const interval = setInterval(loadInvitations, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (currentLobby) {
-      setupRealtimeSubscription();
-      return () => {
-        if (channelRef.current) {
-          channelRef.current.unsubscribe();
-        }
-      };
-    }
-  }, [currentLobby?.id]);
-
-  useEffect(() => {
-    if (user && supabase) {
-      // Subscribe to invitation changes
-      const invitationChannel = supabase
-        .channel('user_invitations')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'lobby_invitations',
-            filter: `invitee_id=eq.${user.id}`,
-          },
-          () => {
-            loadInvitations();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        invitationChannel.unsubscribe();
-      };
-    }
-  }, [user, supabase]);
-
-  const loadFriends = async () => {
-    try {
-      const friendsList = await getFriends();
-      setFriends(friendsList);
-    } catch (error) {
-      console.error('Error loading friends:', error);
-    }
-  };
-
-  const loadInvitations = async () => {
+  const loadInvitations = useCallback(async () => {
     try {
       const invs = await getLobbyInvitations();
       setInvitations(invs);
     } catch (error) {
       console.error('Error loading invitations:', error);
     }
-  };
+  }, []);
+
+  const loadFriends = useCallback(async () => {
+    try {
+      const friendsList = await getFriends();
+      setFriends(friendsList);
+    } catch (error) {
+      console.error('Error loading friends:', error);
+    }
+  }, []);
+
+  // Load friends and invitations on mount
+  useEffect(() => {
+    if (user) {
+      loadFriends();
+      loadInvitations();
+    }
+  }, [user, loadFriends, loadInvitations]);
+
+  // Set up real-time subscription for invitations
+  useEffect(() => {
+    if (!user || !supabase) return;
+
+    // Clean up existing subscription
+    if (invitationChannelRef.current) {
+      invitationChannelRef.current.unsubscribe();
+      invitationChannelRef.current = null;
+    }
+
+    // Subscribe to invitation changes
+    invitationChannelRef.current = supabase
+      .channel(`user_invitations_${user.id}`, {
+        config: {
+          broadcast: { self: true },
+        },
+      })
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lobby_invitations',
+          filter: `invitee_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          console.log('Invitation change detected:', payload);
+          // Small delay to ensure database is updated
+          setTimeout(() => {
+            loadInvitations();
+          }, 100);
+        }
+      )
+      .subscribe((status: string) => {
+        console.log('Invitation channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to invitations');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to invitations - using polling fallback');
+        }
+      });
+
+    // Fallback polling every 5 seconds as backup
+    const pollInterval = setInterval(() => {
+      loadInvitations();
+    }, 5000);
+
+    return () => {
+      if (invitationChannelRef.current) {
+        invitationChannelRef.current.unsubscribe();
+        invitationChannelRef.current = null;
+      }
+      clearInterval(pollInterval);
+    };
+  }, [user, supabase, loadInvitations]);
+
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
-      await acceptLobbyInvitation(invitationId);
       const inv = invitations.find(i => i.id === invitationId);
-      if (inv) {
-        const lobby = await getLobby(inv.lobby_id);
-        if (lobby) {
-          setCurrentLobby(lobby);
-          setLobbyView('lobby');
-        }
+      if (!inv) {
+        alert('Invitation not found');
+        return;
       }
+
+      await acceptLobbyInvitation(invitationId);
+      
+      // Reload invitations to remove the accepted one
       await loadInvitations();
+      
+      // Load the lobby and switch to lobby view
+      const lobby = await getLobby(inv.lobby_id);
+      if (lobby) {
+        setCurrentLobby(lobby);
+        setLobbyView('lobby');
+      } else {
+        alert('Could not load lobby after accepting invitation');
+      }
     } catch (error: any) {
       alert(error.message || 'Error accepting invitation');
+      // Reload invitations in case of error
+      await loadInvitations();
     }
   };
 
@@ -159,17 +190,40 @@ export default function GuessMyAnswerPage() {
       await inviteFriendToLobby(currentLobby.id, friendId);
       alert('Invitation sent!');
       setShowInviteModal(false);
+      // Refresh lobby to show updated state
+      const updated = await getLobby(currentLobby.id);
+      if (updated) {
+        setCurrentLobby(updated);
+      }
     } catch (error: any) {
       alert(error.message || 'Error inviting friend');
     }
   };
 
-  const setupRealtimeSubscription = () => {
+  // Set up real-time subscription for lobby changes
+  useEffect(() => {
     if (!supabase || !currentLobby) return;
 
-    // Subscribe to lobby changes
+    // Clean up existing subscription
+    if (channelRef.current) {
+      channelRef.current.unsubscribe();
+      channelRef.current = null;
+    }
+
+    const refreshLobby = async () => {
+      const updated = await getLobby(currentLobby.id);
+      if (updated) {
+        setCurrentLobby(updated);
+      }
+    };
+
+    // Subscribe to lobby participant changes
     channelRef.current = supabase
-      .channel(`lobby:${currentLobby.id}`)
+      .channel(`lobby:${currentLobby.id}`, {
+        config: {
+          broadcast: { self: true },
+        },
+      })
       .on(
         'postgres_changes',
         {
@@ -178,10 +232,12 @@ export default function GuessMyAnswerPage() {
           table: 'lobby_participants',
           filter: `lobby_id=eq.${currentLobby.id}`,
         },
-        async () => {
-          // Refresh lobby data
-          const updated = await getLobby(currentLobby.id);
-          if (updated) setCurrentLobby(updated);
+        async (payload: any) => {
+          console.log('Participant change detected:', payload);
+          // Small delay to ensure database is updated
+          setTimeout(() => {
+            refreshLobby();
+          }, 100);
         }
       )
       .on(
@@ -192,13 +248,35 @@ export default function GuessMyAnswerPage() {
           table: 'lobbies',
           filter: `id=eq.${currentLobby.id}`,
         },
-        async () => {
-          const updated = await getLobby(currentLobby.id);
-          if (updated) setCurrentLobby(updated);
+        async (payload: any) => {
+          console.log('Lobby change detected:', payload);
+          setTimeout(() => {
+            refreshLobby();
+          }, 100);
         }
       )
-      .subscribe();
-  };
+      .subscribe((status: string) => {
+        console.log('Lobby channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to lobby changes');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to lobby changes');
+        }
+      });
+
+    // Fallback polling every 2 seconds as backup
+    const pollInterval = setInterval(() => {
+      refreshLobby();
+    }, 2000);
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
+      clearInterval(pollInterval);
+    };
+  }, [supabase, currentLobby?.id]);
 
   const handleCreateLobby = async () => {
     try {
