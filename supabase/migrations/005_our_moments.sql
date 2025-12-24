@@ -82,34 +82,39 @@ CREATE POLICY "Users can delete their own moments"
 
 -- Storage Bucket Policies for moments
 -- These policies allow authenticated users to upload, read, and delete their own files
--- Note: If bucket is public, SELECT policy may not be needed, but INSERT/DELETE still require policies
+-- Note: Even if bucket is public, INSERT/DELETE still require RLS policies
+
+-- Enable RLS on storage.objects (if not already enabled)
+-- Note: This might already be enabled by default, but we ensure it's on
 
 -- Allow authenticated users to upload files to their own folder
+-- Files are stored as: {user_id}/{timestamp}.{ext}
 DROP POLICY IF EXISTS "Users can upload to their own folder" ON storage.objects;
 CREATE POLICY "Users can upload to their own folder"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
   bucket_id = 'moments' AND
-  (storage.foldername(name))[1] = auth.uid()::text
+  (string_to_array(name, '/'))[1] = auth.uid()::text
 );
 
--- Allow authenticated users to read files (if bucket is not public, uncomment this)
--- DROP POLICY IF EXISTS "Users can read moments images" ON storage.objects;
--- CREATE POLICY "Users can read moments images"
--- ON storage.objects FOR SELECT
--- TO authenticated
--- USING (
---   bucket_id = 'moments' AND
---   (
---     (storage.foldername(name))[1] = auth.uid()::text OR
---     EXISTS (
---       SELECT 1 FROM moments m
---       WHERE m.image_url LIKE '%' || name || '%'
---       AND (m.user_id = auth.uid() OR m.partner_id = auth.uid())
---     )
---   )
--- );
+-- Allow authenticated users to read files from their own folder or partner's folder
+-- (Even if bucket is public, this ensures proper access control)
+DROP POLICY IF EXISTS "Users can read moments images" ON storage.objects;
+CREATE POLICY "Users can read moments images"
+ON storage.objects FOR SELECT
+TO authenticated
+USING (
+  bucket_id = 'moments' AND
+  (
+    (string_to_array(name, '/'))[1] = auth.uid()::text OR
+    EXISTS (
+      SELECT 1 FROM moments m
+      WHERE m.image_url LIKE '%' || name || '%'
+      AND (m.user_id = auth.uid() OR m.partner_id = auth.uid())
+    )
+  )
+);
 
 -- Allow authenticated users to delete files from their own folder
 DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
@@ -118,6 +123,6 @@ ON storage.objects FOR DELETE
 TO authenticated
 USING (
   bucket_id = 'moments' AND
-  (storage.foldername(name))[1] = auth.uid()::text
+  (string_to_array(name, '/'))[1] = auth.uid()::text
 );
 
