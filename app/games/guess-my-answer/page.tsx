@@ -13,6 +13,10 @@ import {
   leaveLobby,
   setReadyStatus,
   updateLobbyStatus,
+  inviteFriendToLobby,
+  getLobbyInvitations,
+  acceptLobbyInvitation,
+  declineLobbyInvitation,
   LobbyWithParticipants,
 } from '@/lib/db/lobbies';
 import {
@@ -47,6 +51,8 @@ export default function GuessMyAnswerPage() {
   const [currentLobby, setCurrentLobby] = useState<LobbyWithParticipants | null>(null);
   const [lobbyCode, setLobbyCode] = useState('');
   const [friends, setFriends] = useState<any[]>([]);
+  const [invitations, setInvitations] = useState<any[]>([]);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [gameState, setGameState] = useState<GameState>('lobby');
   const [currentQuestion, setCurrentQuestion] = useState<GuessMyAnswerQuestion | null>(null);
   const [secretAnswer, setSecretAnswer] = useState('');
@@ -60,6 +66,10 @@ export default function GuessMyAnswerPage() {
   useEffect(() => {
     if (user) {
       loadFriends();
+      loadInvitations();
+      // Poll for new invitations every 5 seconds
+      const interval = setInterval(loadInvitations, 5000);
+      return () => clearInterval(interval);
     }
   }, [user]);
 
@@ -74,12 +84,83 @@ export default function GuessMyAnswerPage() {
     }
   }, [currentLobby?.id]);
 
+  useEffect(() => {
+    if (user && supabase) {
+      // Subscribe to invitation changes
+      const invitationChannel = supabase
+        .channel('user_invitations')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'lobby_invitations',
+            filter: `invitee_id=eq.${user.id}`,
+          },
+          () => {
+            loadInvitations();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        invitationChannel.unsubscribe();
+      };
+    }
+  }, [user, supabase]);
+
   const loadFriends = async () => {
     try {
       const friendsList = await getFriends();
       setFriends(friendsList);
     } catch (error) {
       console.error('Error loading friends:', error);
+    }
+  };
+
+  const loadInvitations = async () => {
+    try {
+      const invs = await getLobbyInvitations();
+      setInvitations(invs);
+    } catch (error) {
+      console.error('Error loading invitations:', error);
+    }
+  };
+
+  const handleAcceptInvitation = async (invitationId: string) => {
+    try {
+      await acceptLobbyInvitation(invitationId);
+      const inv = invitations.find(i => i.id === invitationId);
+      if (inv) {
+        const lobby = await getLobby(inv.lobby_id);
+        if (lobby) {
+          setCurrentLobby(lobby);
+          setLobbyView('lobby');
+        }
+      }
+      await loadInvitations();
+    } catch (error: any) {
+      alert(error.message || 'Error accepting invitation');
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    try {
+      await declineLobbyInvitation(invitationId);
+      await loadInvitations();
+    } catch (error: any) {
+      alert(error.message || 'Error declining invitation');
+    }
+  };
+
+  const handleInviteFriend = async (friendId: string) => {
+    if (!currentLobby) return;
+    try {
+      await inviteFriendToLobby(currentLobby.id, friendId);
+      alert('Invitation sent!');
+      setShowInviteModal(false);
+    } catch (error: any) {
+      alert(error.message || 'Error inviting friend');
     }
   };
 
@@ -262,27 +343,46 @@ export default function GuessMyAnswerPage() {
           <p>One answers secretly, the other guesses!</p>
         </div>
 
+        {/* Pending Invitations */}
+        {invitations.length > 0 && lobbyView === 'create' && (
+          <div className="section" style={{ marginBottom: '1rem', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '8px', padding: '1rem' }}>
+            <h3 className="section-subtitle">Pending Invitations ({invitations.length})</h3>
+            <div className="invitations-list">
+              {invitations.map((invitation) => (
+                <div key={invitation.id} className="invitation-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', marginBottom: '0.5rem', backgroundColor: 'white', borderRadius: '6px' }}>
+                  <div>
+                    <strong>{invitation.inviter?.username || invitation.inviter?.name || 'Someone'}</strong> invited you to a game
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      className="action-btn primary-action"
+                      onClick={() => handleAcceptInvitation(invitation.id)}
+                      style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="action-btn secondary"
+                      onClick={() => handleDeclineInvitation(invitation.id)}
+                      style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {lobbyView === 'create' && (
           <div className="section">
-            <h2 className="section-title">Create or Join a Game</h2>
+            <h2 className="section-title">Create a Game</h2>
             <div className="lobby-actions">
               <button className="spin-button" onClick={handleCreateLobby}>
                 <PlayIcon />
                 <span>Create Lobby</span>
               </button>
-              <div className="lobby-divider">OR</div>
-              <div className="join-lobby">
-                <input
-                  type="text"
-                  className="profile-input"
-                  placeholder="Enter lobby code"
-                  value={lobbyCode}
-                  onChange={(e) => setLobbyCode(e.target.value.toUpperCase())}
-                />
-                <button className="action-btn primary-action" onClick={handleJoinLobby}>
-                  Join Lobby
-                </button>
-              </div>
             </div>
           </div>
         )}
@@ -291,10 +391,15 @@ export default function GuessMyAnswerPage() {
           <div className="section">
             <div className="lobby-header">
               <h2 className="section-title">Lobby</h2>
-              <div className="lobby-code">
-                <span>Code: </span>
-                <strong>{currentLobby.id.slice(0, 8).toUpperCase()}</strong>
-              </div>
+              {currentLobby.host_id === user?.id && currentLobby.participants.length < currentLobby.max_players && (
+                <button
+                  className="action-btn primary-action"
+                  onClick={() => setShowInviteModal(true)}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  Invite Friend
+                </button>
+              )}
             </div>
 
             <div className="lobby-participants">
@@ -347,7 +452,54 @@ export default function GuessMyAnswerPage() {
             {currentLobby.participants.length < currentLobby.max_players && (
               <div className="lobby-waiting">
                 <p>Waiting for another player to join...</p>
-                <p className="lobby-code-share">Share this code: <strong>{currentLobby.id.slice(0, 8).toUpperCase()}</strong></p>
+                {currentLobby.host_id === user?.id && (
+                  <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
+                    Click "Invite Friend" to invite someone from your friends list
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Invite Friend Modal */}
+            {showInviteModal && (
+              <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                <div className="modal-content" style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
+                  <h3 style={{ marginBottom: '1rem' }}>Invite a Friend</h3>
+                  <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                    {friends.length === 0 ? (
+                      <p>No friends to invite. Add friends from your profile!</p>
+                    ) : (
+                      friends
+                        .filter(friend => !currentLobby.participants.some(p => p.user_id === friend.friend_id))
+                        .map((friend) => (
+                          <div key={friend.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', marginBottom: '0.5rem', border: '1px solid #ddd', borderRadius: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ fontSize: '2rem' }}>
+                                {getAvatarEmoji(friend.avatar_selection || null)}
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 'bold' }}>{friend.username || friend.name || 'Friend'}</div>
+                              </div>
+                            </div>
+                            <button
+                              className="action-btn primary-action"
+                              onClick={() => handleInviteFriend(friend.friend_id)}
+                              style={{ padding: '0.5rem 1rem' }}
+                            >
+                              Invite
+                            </button>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                  <button
+                    className="action-btn secondary"
+                    onClick={() => setShowInviteModal(false)}
+                    style={{ marginTop: '1rem', width: '100%' }}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             )}
           </div>
