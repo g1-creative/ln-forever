@@ -1134,15 +1134,15 @@ export default function GuessMyAnswerPage() {
                   <div className="space-y-2 mb-4">
                     {friends.map((friend) => (
                       <button
-                        key={friend.id}
-                        onClick={() => handleInviteFriend(friend.id)}
+                        key={friend.friend_id}
+                        onClick={() => handleInviteFriend(friend.friend_id)}
                         disabled={loading}
                         className="w-full bg-white/10 hover:bg-white/20 p-4 rounded-lg flex items-center gap-3 transition disabled:opacity-50 text-white"
                       >
                         <span className="text-3xl">
-                          {AVATAR_EMOJIS[friend.avatar_emoji || 'avatar1']}
+                          {AVATAR_EMOJIS[friend.avatar_selection || 'avatar1']}
                         </span>
-                        <span className="font-bold">{friend.display_name}</span>
+                        <span className="font-bold">{friend.name || friend.username || 'Unknown'}</span>
                       </button>
                     ))}
                   </div>
