@@ -176,38 +176,51 @@ export async function getFriends(): Promise<FriendWithProfile[]> {
   // Get friendships where user is user1
   const { data: friends1, error: error1 } = await (supabase
     .from('friends') as any)
-    .select(`
-      id,
-      user2_id,
-      created_at,
-      user2:profiles!friends_user2_id_fkey(username, name, avatar_selection)
-    `)
+    .select('id, user2_id, created_at')
     .eq('user1_id', user.id);
 
   // Get friendships where user is user2
   const { data: friends2, error: error2 } = await (supabase
     .from('friends') as any)
-    .select(`
-      id,
-      user1_id,
-      created_at,
-      user1:profiles!friends_user1_id_fkey(username, name, avatar_selection)
-    `)
+    .select('id, user1_id, created_at')
     .eq('user2_id', user.id);
 
   if (error1 || error2) throw error1 || error2;
+
+  // Collect all friend user IDs
+  const friendIds = new Set<string>();
+  (friends1 || []).forEach((f: any) => friendIds.add(f.user2_id));
+  (friends2 || []).forEach((f: any) => friendIds.add(f.user1_id));
+
+  // Fetch profiles for all friends
+  let profilesMap: Record<string, any> = {};
+  if (friendIds.size > 0) {
+    const { data: profiles, error: profilesError } = await (supabase
+      .from('profiles') as any)
+      .select('id, username, name, avatar_selection')
+      .in('id', Array.from(friendIds));
+
+    if (profilesError) {
+      console.error('Error fetching friend profiles:', profilesError);
+    } else if (profiles) {
+      profiles.forEach((p: any) => {
+        profilesMap[p.id] = p;
+      });
+    }
+  }
 
   const allFriends: FriendWithProfile[] = [];
 
   // Process friends1
   if (friends1) {
     friends1.forEach((f: any) => {
+      const profile = profilesMap[f.user2_id];
       allFriends.push({
         id: f.id,
         friend_id: f.user2_id,
-        username: f.user2?.username || null,
-        name: f.user2?.name || null,
-        avatar_selection: f.user2?.avatar_selection || null,
+        username: profile?.username || null,
+        name: profile?.name || null,
+        avatar_selection: profile?.avatar_selection || null,
         created_at: f.created_at,
       });
     });
@@ -216,12 +229,13 @@ export async function getFriends(): Promise<FriendWithProfile[]> {
   // Process friends2
   if (friends2) {
     friends2.forEach((f: any) => {
+      const profile = profilesMap[f.user1_id];
       allFriends.push({
         id: f.id,
         friend_id: f.user1_id,
-        username: f.user1?.username || null,
-        name: f.user1?.name || null,
-        avatar_selection: f.user1?.avatar_selection || null,
+        username: profile?.username || null,
+        name: profile?.name || null,
+        avatar_selection: profile?.avatar_selection || null,
         created_at: f.created_at,
       });
     });
@@ -246,38 +260,54 @@ export async function getFriendRequests(): Promise<{
   // Get sent requests
   const { data: sent, error: sentError } = await (supabase
     .from('friend_requests') as any)
-    .select(`
-      *,
-      receiver:profiles!friend_requests_receiver_id_fkey(id, username, name, avatar_selection)
-    `)
+    .select('*')
     .eq('sender_id', user.id)
     .eq('status', 'pending');
 
   // Get received requests
   const { data: received, error: receivedError } = await (supabase
     .from('friend_requests') as any)
-    .select(`
-      *,
-      sender:profiles!friend_requests_sender_id_fkey(id, username, name, avatar_selection)
-    `)
+    .select('*')
     .eq('receiver_id', user.id)
     .eq('status', 'pending');
 
   if (sentError || receivedError) throw sentError || receivedError;
 
+  // Get all unique user IDs that we need profile data for
+  const userIds = new Set<string>();
+  (sent || []).forEach((r: any) => userIds.add(r.receiver_id));
+  (received || []).forEach((r: any) => userIds.add(r.sender_id));
+
+  // Fetch profiles for all users
+  let profilesMap: Record<string, any> = {};
+  if (userIds.size > 0) {
+    const { data: profiles, error: profilesError } = await (supabase
+      .from('profiles') as any)
+      .select('id, username, name, avatar_selection')
+      .in('id', Array.from(userIds));
+
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    } else if (profiles) {
+      profiles.forEach((p: any) => {
+        profilesMap[p.id] = p;
+      });
+    }
+  }
+
   return {
     sent: (sent || []).map((r: any) => ({
       ...r,
-      receiver_profile: r.receiver ? {
+      receiver_profile: profilesMap[r.receiver_id] ? {
         id: r.receiver_id,
-        ...r.receiver,
+        ...profilesMap[r.receiver_id],
       } : undefined,
     })),
     received: (received || []).map((r: any) => ({
       ...r,
-      sender_profile: r.sender ? {
+      sender_profile: profilesMap[r.sender_id] ? {
         id: r.sender_id,
-        ...r.sender,
+        ...profilesMap[r.sender_id],
       } : undefined,
     })),
   };
