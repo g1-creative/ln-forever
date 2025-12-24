@@ -19,11 +19,7 @@ import {
   declineLobbyInvitation,
   LobbyWithParticipants,
 } from '@/lib/db/lobbies';
-import {
-  getRandomQuestion,
-  getQuestionCount,
-  GuessMyAnswerQuestion,
-} from '@/lib/guess-my-answer-questions';
+import { getRandomScenario, Scenario } from '@/lib/scenarios';
 import { getFriends } from '@/lib/db/friends';
 import { CheckCircleIcon, XCircleIcon, PlayIcon } from '@/components/Icons';
 
@@ -54,9 +50,10 @@ export default function GuessMyAnswerPage() {
   const [invitations, setInvitations] = useState<any[]>([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [gameState, setGameState] = useState<GameState>('lobby');
-  const [currentQuestion, setCurrentQuestion] = useState<GuessMyAnswerQuestion | null>(null);
-  const [secretAnswer, setSecretAnswer] = useState('');
-  const [guess, setGuess] = useState('');
+  const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [selectedGuess, setSelectedGuess] = useState<string | null>(null);
+  const [answerOptions, setAnswerOptions] = useState<string[]>([]);
   const [answererId, setAnswererId] = useState<string | null>(null);
   const [isAnswerer, setIsAnswerer] = useState(false);
   const [round, setRound] = useState(1);
@@ -250,8 +247,17 @@ export default function GuessMyAnswerPage() {
         },
         async (payload: any) => {
           console.log('Lobby change detected:', payload);
-          setTimeout(() => {
-            refreshLobby();
+          setTimeout(async () => {
+            const updated = await getLobby(currentLobby.id);
+            if (updated) {
+              const previousStatus = currentLobby.status;
+              setCurrentLobby(updated);
+              // If lobby status changed to playing, start the game
+              if (updated.status === 'playing' && previousStatus === 'waiting') {
+                console.log('Game started! Starting game for all players...');
+                await startGame(updated);
+              }
+            }
           }, 100);
         }
       )
@@ -341,6 +347,22 @@ export default function GuessMyAnswerPage() {
     }
   };
 
+  const generateAnswerOptions = (scenario: Scenario, answererRole: 'roleA' | 'roleB'): string[] => {
+    // Generate 4 multiple choice options based on the scenario
+    const role = answererRole === 'roleA' ? scenario.roleA : scenario.roleB;
+    const hints = scenario.hints || [];
+    
+    // Create options based on scenario context
+    const options = [
+      `Follow the scenario exactly as described`,
+      `Add a creative twist to the scenario`,
+      `Focus on being helpful and supportive`,
+      `Make it fun and lighthearted`,
+    ];
+    
+    return options;
+  };
+
   const startGame = async (lobby: LobbyWithParticipants) => {
     if (lobby.participants.length < 2) return;
 
@@ -352,24 +374,29 @@ export default function GuessMyAnswerPage() {
     setAnswererId(answerer.user_id);
     setIsAnswerer(answerer.user_id === user?.id);
 
-    // Get a random question
-    const question = getRandomQuestion();
-    if (question) {
-      setCurrentQuestion(question);
+    // Get a random scenario
+    const scenario = getRandomScenario('medium', 'all');
+    if (scenario) {
+      setCurrentScenario(scenario);
+      const answererRole = answererIndex === 0 ? 'roleA' : 'roleB';
+      const options = generateAnswerOptions(scenario, answererRole);
+      setAnswerOptions(options);
+      setSelectedAnswer(null);
+      setSelectedGuess(null);
       setGameState('answering');
       setLobbyView('playing');
     }
   };
 
   const handleSubmitAnswer = async () => {
-    if (!secretAnswer.trim() || !currentLobby || !currentQuestion) return;
+    if (!selectedAnswer || !currentLobby || !currentScenario) return;
 
     // Store answer (in a real implementation, this would go to the database)
     setGameState('guessing');
   };
 
   const handleSubmitGuess = async () => {
-    if (!guess.trim() || !currentLobby) return;
+    if (!selectedGuess || !currentLobby) return;
 
     // Store guess and reveal answer
     setGameState('revealed');
@@ -377,8 +404,8 @@ export default function GuessMyAnswerPage() {
 
   const handleNextRound = () => {
     setRound(prev => prev + 1);
-    setSecretAnswer('');
-    setGuess('');
+    setSelectedAnswer(null);
+    setSelectedGuess(null);
     setGameState('answering');
     
     if (currentLobby) {
@@ -621,23 +648,39 @@ export default function GuessMyAnswerPage() {
 
         {lobbyView === 'playing' && (
           <div className="section">
-            {gameState === 'answering' && isAnswerer && (
+            {gameState === 'answering' && isAnswerer && currentScenario && (
               <div className="game-phase">
                 <h2 className="section-title">Round {round}</h2>
                 <div className="question-card">
-                  <h3>{currentQuestion?.question}</h3>
-                  <p className="question-instruction">Enter your secret answer:</p>
-                  <textarea
-                    className="profile-textarea"
-                    placeholder="Type your answer here..."
-                    value={secretAnswer}
-                    onChange={(e) => setSecretAnswer(e.target.value)}
-                    rows={4}
-                  />
+                  <h3>{currentScenario.title}</h3>
+                  <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
+                    <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Your Role:</p>
+                    <p>{currentScenario.roleA}</p>
+                  </div>
+                  <p className="question-instruction" style={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+                    What would you do in this scenario?
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {answerOptions.map((option, index) => (
+                      <button
+                        key={index}
+                        className={`action-btn ${selectedAnswer === option ? 'primary-action' : 'secondary'}`}
+                        onClick={() => setSelectedAnswer(option)}
+                        style={{
+                          textAlign: 'left',
+                          padding: '1rem',
+                          border: selectedAnswer === option ? '2px solid #0066cc' : '1px solid #ddd',
+                        }}
+                      >
+                        {String.fromCharCode(65 + index)}. {option}
+                      </button>
+                    ))}
+                  </div>
                   <button
                     className="action-btn primary-action"
                     onClick={handleSubmitAnswer}
-                    disabled={!secretAnswer.trim()}
+                    disabled={!selectedAnswer}
+                    style={{ marginTop: '1rem', width: '100%' }}
                   >
                     Submit Answer
                   </button>
@@ -645,35 +688,52 @@ export default function GuessMyAnswerPage() {
               </div>
             )}
 
-            {gameState === 'answering' && !isAnswerer && (
+            {gameState === 'answering' && !isAnswerer && currentScenario && (
               <div className="game-phase">
                 <h2 className="section-title">Round {round}</h2>
                 <div className="waiting-card">
-                  <p>Waiting for your partner to answer the question...</p>
-                  <div className="question-preview">
-                    <h3>{currentQuestion?.question}</h3>
+                  <p>Waiting for your partner to answer...</p>
+                  <div className="question-preview" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
+                    <h3>{currentScenario.title}</h3>
+                    <p style={{ marginTop: '0.5rem' }}>{currentScenario.roleB}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            {gameState === 'guessing' && !isAnswerer && (
+            {gameState === 'guessing' && !isAnswerer && currentScenario && (
               <div className="game-phase">
                 <h2 className="section-title">Round {round}</h2>
                 <div className="question-card">
-                  <h3>{currentQuestion?.question}</h3>
-                  <p className="question-instruction">What do you think they answered?</p>
-                  <textarea
-                    className="profile-textarea"
-                    placeholder="Type your guess here..."
-                    value={guess}
-                    onChange={(e) => setGuess(e.target.value)}
-                    rows={4}
-                  />
+                  <h3>{currentScenario.title}</h3>
+                  <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
+                    <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Your Partner's Role:</p>
+                    <p>{currentScenario.roleA}</p>
+                  </div>
+                  <p className="question-instruction" style={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+                    Guess what your partner chose:
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {answerOptions.map((option, index) => (
+                      <button
+                        key={index}
+                        className={`action-btn ${selectedGuess === option ? 'primary-action' : 'secondary'}`}
+                        onClick={() => setSelectedGuess(option)}
+                        style={{
+                          textAlign: 'left',
+                          padding: '1rem',
+                          border: selectedGuess === option ? '2px solid #0066cc' : '1px solid #ddd',
+                        }}
+                      >
+                        {String.fromCharCode(65 + index)}. {option}
+                      </button>
+                    ))}
+                  </div>
                   <button
                     className="action-btn primary-action"
                     onClick={handleSubmitGuess}
-                    disabled={!guess.trim()}
+                    disabled={!selectedGuess}
+                    style={{ marginTop: '1rem', width: '100%' }}
                   >
                     Submit Guess
                   </button>
@@ -696,11 +756,16 @@ export default function GuessMyAnswerPage() {
                 <div className="reveal-card">
                   <div className="reveal-section">
                     <h4>Your Answer:</h4>
-                    <p className="reveal-text">{secretAnswer}</p>
+                    <p className="reveal-text">{selectedAnswer}</p>
                   </div>
                   <div className="reveal-section">
                     <h4>Their Guess:</h4>
-                    <p className="reveal-text">{guess}</p>
+                    <p className="reveal-text">{selectedGuess}</p>
+                  </div>
+                  <div className="reveal-section" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: selectedAnswer === selectedGuess ? '#d4edda' : '#f8d7da', borderRadius: '6px' }}>
+                    <h4 style={{ margin: 0 }}>
+                      {selectedAnswer === selectedGuess ? '✅ Correct!' : '❌ Not quite!'}
+                    </h4>
                   </div>
                   <div className="reveal-actions">
                     <button className="action-btn primary-action" onClick={handleNextRound}>
