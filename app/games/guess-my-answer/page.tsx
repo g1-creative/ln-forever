@@ -172,6 +172,7 @@ export default function GuessMyAnswerPage() {
           filter: `lobby_id=eq.${currentLobby.id}`,
         },
         () => {
+          console.log('Lobby participants changed, refreshing...');
           refreshLobby();
         }
       )
@@ -185,32 +186,57 @@ export default function GuessMyAnswerPage() {
         },
         async (payload: any) => {
           console.log('Lobby change detected:', payload);
-          setTimeout(async () => {
-            const updated = await getLobby(currentLobby.id);
-            if (updated) {
-              const previousStatus = previousStatusRef.current;
-              previousStatusRef.current = updated.status;
-              setCurrentLobby(updated);
+          const updated = await getLobby(currentLobby.id);
+          if (updated) {
+            const previousStatus = previousStatusRef.current;
+            previousStatusRef.current = updated.status;
+            setCurrentLobby(updated);
 
-              // If lobby status changed to playing, load game state
-              if (updated.status === 'playing' && previousStatus === 'waiting' && lobbyView === 'lobby') {
-                console.log('Game started! Transitioning to playing view...');
-                setLobbyView('playing');
-                await loadGameState();
-              }
+            // If lobby status changed to playing, transition to playing view
+            if (updated.status === 'playing' && previousStatus === 'waiting') {
+              console.log('Game started! Transitioning to playing view...');
+              setLobbyView('playing');
+              // Give a moment for the view to update, then load game state
+              setTimeout(() => {
+                loadGameState();
+              }, 200);
             }
-          }, 100);
+          }
         }
       )
-      .subscribe();
+      .subscribe((status: string) => {
+        console.log('Lobby channel subscription status:', status);
+      });
 
     channelRef.current = channel;
+
+    // Add polling fallback for lobby status changes
+    const pollInterval = setInterval(async () => {
+      const updated = await getLobby(currentLobby.id);
+      if (updated) {
+        const previousStatus = previousStatusRef.current;
+        if (updated.status !== previousStatus) {
+          console.log(`Lobby status changed (polling): ${previousStatus} -> ${updated.status}`);
+          previousStatusRef.current = updated.status;
+          setCurrentLobby(updated);
+          
+          if (updated.status === 'playing' && previousStatus === 'waiting') {
+            console.log('Game started (detected by polling)! Transitioning to playing view...');
+            setLobbyView('playing');
+            setTimeout(() => {
+              loadGameState();
+            }, 200);
+          }
+        }
+      }
+    }, 2000);
 
     return () => {
       channel.unsubscribe();
       channelRef.current = null;
+      clearInterval(pollInterval);
     };
-  }, [currentLobby, supabase, lobbyView]);
+  }, [currentLobby, supabase]);
 
   // Game state subscription
   useEffect(() => {
