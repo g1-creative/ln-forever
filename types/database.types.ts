@@ -14,6 +14,9 @@ export interface Database {
           id: string
           name: string | null
           avatar_url: string | null
+          avatar_selection: string | null
+          username: string | null
+          bio: string | null
           language_level: string | null
           preferred_difficulty: 'easy' | 'medium' | 'hard' | null
           created_at: string
@@ -23,6 +26,9 @@ export interface Database {
           id: string
           name?: string | null
           avatar_url?: string | null
+          avatar_selection?: string | null
+          username?: string | null
+          bio?: string | null
           language_level?: string | null
           preferred_difficulty?: 'easy' | 'medium' | 'hard' | null
           created_at?: string
@@ -32,6 +38,9 @@ export interface Database {
           id?: string
           name?: string | null
           avatar_url?: string | null
+          avatar_selection?: string | null
+          username?: string | null
+          bio?: string | null
           language_level?: string | null
           preferred_difficulty?: 'easy' | 'medium' | 'hard' | null
           created_at?: string
@@ -190,6 +199,52 @@ export interface Database {
           time_practiced_seconds?: number
           difficulty_breakdown?: Json
           created_at?: string
+        }
+      }
+      friends: {
+        Row: {
+          id: string
+          user1_id: string
+          user2_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user1_id: string
+          user2_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user1_id?: string
+          user2_id?: string
+          created_at?: string
+        }
+      }
+      friend_requests: {
+        Row: {
+          id: string
+          sender_id: string
+          receiver_id: string
+          status: 'pending' | 'accepted' | 'rejected'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          sender_id: string
+          receiver_id: string
+          status?: 'pending' | 'accepted' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          sender_id?: string
+          receiver_id?: string
+          status?: 'pending' | 'accepted' | 'rejected'
+          created_at?: string
+          updated_at?: string
         }
       }
     }

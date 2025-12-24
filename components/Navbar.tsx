@@ -40,6 +40,12 @@ export default function Navbar() {
               >
                 Dashboard
               </Link>
+              <Link 
+                href="/profile" 
+                className={`navbar-link ${isActive('/profile') ? 'active' : ''}`}
+              >
+                Profile
+              </Link>
               <div className="navbar-user">
                 <span className="navbar-email">{user.email}</span>
                 <button onClick={signOut} className="navbar-btn">
