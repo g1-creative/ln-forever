@@ -888,24 +888,24 @@ main {
 .timer-complete {
   text-align: center;
   padding: var(--space-lg);
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  background: linear-gradient(135deg, rgba(255, 111, 174, 0.1) 0%, rgba(123, 77, 255, 0.1) 100%);
   border-radius: var(--radius-lg);
-  color: var(--success);
+  color: var(--primary);
   font-weight: 700;
   font-size: 1.125rem;
   margin-top: var(--space-md);
   animation: pulse 2s ease infinite;
-  border: 2px solid var(--success);
+  border: 2px solid var(--primary);
 }
 
 @keyframes pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0 0 0 rgba(255, 111, 174, 0.4);
   }
   50% {
     transform: scale(1.02);
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 10px rgba(255, 111, 174, 0);
   }
 }
 
