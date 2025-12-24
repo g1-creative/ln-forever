@@ -24,7 +24,8 @@ export default function Navbar() {
             height={32}
             className="navbar-logo"
           />
-          <span>LN Forever</span>
+          <span className="hidden sm:inline">LN Forever</span>
+          <span className="sm:hidden">LN</span>
         </Link>
         
         <div className="navbar-links">
@@ -52,11 +53,12 @@ export default function Navbar() {
                 )}
               </Link>
               <div className="navbar-user">
-                <span className="navbar-email">
+                <span className="navbar-email hidden sm:inline">
                   {profile?.username || profile?.name || user.email?.split('@')[0] || 'User'}
                 </span>
-                <button onClick={signOut} className="navbar-btn">
-                  Sign Out
+                <button onClick={signOut} className="navbar-btn text-xs sm:text-sm">
+                  <span className="hidden sm:inline">Sign Out</span>
+                  <span className="sm:hidden">Out</span>
                 </button>
               </div>
             </>

@@ -1399,31 +1399,105 @@ main {
 }
 
 @media (max-width: 768px) {
+  .navbar {
+    padding: 0;
+  }
+
   .navbar-container {
-    flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-md);
+    flex-direction: row;
+    gap: var(--space-xs);
+    padding: 6px var(--space-sm);
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .navbar-brand {
+    font-size: 0.875rem;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .navbar-logo {
+    width: 24px;
+    height: 24px;
   }
 
   .navbar-links {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .navbar-link {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
   }
 
   .navbar-user {
-    flex-direction: column;
-    width: 100%;
-    gap: var(--space-sm);
+    flex-direction: row;
+    width: auto;
+    gap: 4px;
+    align-items: center;
+    flex-shrink: 0;
   }
 
   .navbar-email {
-    font-size: 0.8125rem;
+    font-size: 0.7rem;
+    display: none; /* Hide username on mobile to save space */
+  }
+
+  .navbar-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    min-height: 32px;
+    border-width: 1.5px;
+    white-space: nowrap;
   }
 
   main {
-    padding-top: calc(var(--space-md) + 120px);
+    padding-top: 50px; /* Reduced from 120px */
   }
+}
+
+/* Extra compact for very small screens */
+@media (max-width: 480px) {
+  .navbar-container {
+    padding: 4px 8px;
+    min-height: 40px;
+  }
+
+  .navbar-brand {
+    font-size: 0.8rem;
+  }
+
+  .navbar-logo {
+    width: 20px;
+    height: 20px;
+  }
+
+  .navbar-link {
+    font-size: 0.7rem;
+    padding: 5px 6px;
+    min-height: 30px;
+  }
+
+  .navbar-btn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    min-height: 30px;
+  }
+
+  main {
+    padding-top: 45px;
+  }
+}
 
   .hero-actions {
     flex-direction: column;
