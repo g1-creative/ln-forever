@@ -61,6 +61,7 @@ export default function GuessMyAnswerPage() {
   const supabase = getSupabaseClient();
   const channelRef = useRef<any>(null);
   const invitationChannelRef = useRef<any>(null);
+  const previousStatusRef = useRef<string>('waiting');
 
   const loadInvitations = useCallback(async () => {
     try {
@@ -201,6 +202,15 @@ export default function GuessMyAnswerPage() {
   // Set up real-time subscription for lobby changes
   useEffect(() => {
     if (!supabase || !currentLobby) return;
+    
+    // Initialize previous status
+    previousStatusRef.current = currentLobby.status;
+    
+    // If lobby is already playing, start the game immediately
+    if (currentLobby.status === 'playing' && lobbyView === 'lobby') {
+      console.log('Lobby is already playing, starting game...');
+      startGame(currentLobby);
+    }
 
     // Clean up existing subscription
     if (channelRef.current) {
@@ -211,7 +221,15 @@ export default function GuessMyAnswerPage() {
     const refreshLobby = async () => {
       const updated = await getLobby(currentLobby.id);
       if (updated) {
+        const previousStatus = previousStatusRef.current;
+        previousStatusRef.current = updated.status;
         setCurrentLobby(updated);
+        
+        // If lobby status changed to playing, start the game
+        if (updated.status === 'playing' && previousStatus === 'waiting' && lobbyView === 'lobby') {
+          console.log('Game started! Starting game for all players...');
+          await startGame(updated);
+        }
       }
     };
 
@@ -248,18 +266,24 @@ export default function GuessMyAnswerPage() {
         },
         async (payload: any) => {
           console.log('Lobby change detected:', payload);
+          // Check if status changed in the payload
+          const newStatus = payload.new?.status || payload.record?.status;
+          const oldStatus = payload.old?.status || previousStatusRef.current;
+          
           setTimeout(async () => {
             const updated = await getLobby(currentLobby.id);
             if (updated) {
-              const previousStatus = currentLobby.status;
+              const previousStatus = previousStatusRef.current;
+              previousStatusRef.current = updated.status;
               setCurrentLobby(updated);
+              
               // If lobby status changed to playing, start the game
-              if (updated.status === 'playing' && previousStatus === 'waiting') {
+              if (updated.status === 'playing' && (previousStatus === 'waiting' || oldStatus === 'waiting') && lobbyView === 'lobby') {
                 console.log('Game started! Starting game for all players...');
                 await startGame(updated);
               }
             }
-          }, 100);
+          }, 200);
         }
       )
       .subscribe((status: string) => {
@@ -271,10 +295,10 @@ export default function GuessMyAnswerPage() {
         }
       });
 
-    // Fallback polling every 2 seconds as backup
+    // Fallback polling every 1 second as backup (more frequent for game start detection)
     const pollInterval = setInterval(() => {
       refreshLobby();
-    }, 2000);
+    }, 1000);
 
     return () => {
       if (channelRef.current) {
