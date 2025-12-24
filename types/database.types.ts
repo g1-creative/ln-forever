@@ -247,6 +247,128 @@ export interface Database {
           updated_at?: string
         }
       }
+      lobbies: {
+        Row: {
+          id: string
+          host_id: string
+          game_type: string
+          status: 'waiting' | 'playing' | 'finished'
+          max_players: number
+          current_players: number
+          created_at: string
+          updated_at: string
+          settings: Json
+        }
+        Insert: {
+          id?: string
+          host_id: string
+          game_type?: string
+          status?: 'waiting' | 'playing' | 'finished'
+          max_players?: number
+          current_players?: number
+          created_at?: string
+          updated_at?: string
+          settings?: Json
+        }
+        Update: {
+          id?: string
+          host_id?: string
+          game_type?: string
+          status?: 'waiting' | 'playing' | 'finished'
+          max_players?: number
+          current_players?: number
+          created_at?: string
+          updated_at?: string
+          settings?: Json
+        }
+      }
+      lobby_participants: {
+        Row: {
+          id: string
+          lobby_id: string
+          user_id: string
+          joined_at: string
+          is_ready: boolean
+        }
+        Insert: {
+          id?: string
+          lobby_id: string
+          user_id: string
+          joined_at?: string
+          is_ready?: boolean
+        }
+        Update: {
+          id?: string
+          lobby_id?: string
+          user_id?: string
+          joined_at?: string
+          is_ready?: boolean
+        }
+      }
+      guess_my_answer_sessions: {
+        Row: {
+          id: string
+          lobby_id: string
+          question: string
+          answerer_id: string
+          secret_answer: string | null
+          guesses: Json
+          status: 'answering' | 'guessing' | 'revealed' | 'finished'
+          round_number: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lobby_id: string
+          question: string
+          answerer_id: string
+          secret_answer?: string | null
+          guesses?: Json
+          status?: 'answering' | 'guessing' | 'revealed' | 'finished'
+          round_number?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lobby_id?: string
+          question?: string
+          answerer_id?: string
+          secret_answer?: string | null
+          guesses?: Json
+          status?: 'answering' | 'guessing' | 'revealed' | 'finished'
+          round_number?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      guess_my_answer_state: {
+        Row: {
+          id: string
+          lobby_id: string
+          current_session_id: string | null
+          current_turn_user_id: string | null
+          game_data: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          lobby_id: string
+          current_session_id?: string | null
+          current_turn_user_id?: string | null
+          game_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          lobby_id?: string
+          current_session_id?: string | null
+          current_turn_user_id?: string | null
+          game_data?: Json
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
