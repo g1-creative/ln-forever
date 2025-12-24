@@ -118,6 +118,7 @@ export default function WouldYouRatherPage() {
             width={64} 
             height={64}
             className="page-header-logo"
+            priority
           />
           <h1>Would You Rather</h1>
           <p>Make tough choices and spark interesting conversations</p>
@@ -221,11 +222,11 @@ export default function WouldYouRatherPage() {
         </div>
 
         {!currentQuestion && (
-          <button className="spin-button" onClick={handleGetQuestion}>
+          <button className="spin-button" onClick={handleGetQuestion} disabled={isAnimating}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
             </svg>
-            <span>Get Question</span>
+            <span>{isAnimating ? 'Loading...' : 'Get Question'}</span>
           </button>
         )}
 
@@ -251,7 +252,15 @@ export default function WouldYouRatherPage() {
                 <div className="wyr-option-content">
                   {currentQuestion.imageA && (
                     <div className="wyr-image">
-                      <img src={currentQuestion.imageA} alt="Option A" />
+                      <Image 
+                        src={currentQuestion.imageA} 
+                        alt="Option A" 
+                        width={400}
+                        height={300}
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                      />
                     </div>
                   )}
                   <div className="wyr-option-text">
@@ -280,7 +289,15 @@ export default function WouldYouRatherPage() {
                 <div className="wyr-option-content">
                   {currentQuestion.imageB && (
                     <div className="wyr-image">
-                      <img src={currentQuestion.imageB} alt="Option B" />
+                      <Image 
+                        src={currentQuestion.imageB} 
+                        alt="Option B" 
+                        width={400}
+                        height={300}
+                        loading="lazy"
+                        placeholder="blur"
+                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                      />
                     </div>
                   )}
                   <div className="wyr-option-text">

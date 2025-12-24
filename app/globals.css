@@ -3247,12 +3247,16 @@ main {
   flex-shrink: 0;
   border: 2px solid var(--primary);
   box-shadow: 0 4px 12px rgba(255, 111, 174, 0.3);
+  position: relative;
 }
 
-.wyr-image img {
-  width: 100%;
-  height: 100%;
+.wyr-image img,
+.wyr-image span,
+.wyr-image > span {
+  width: 100% !important;
+  height: 100% !important;
   object-fit: cover;
+  display: block;
 }
 
 .wyr-option-text {
@@ -3376,7 +3380,8 @@ main {
     text-align: center;
   }
 
-  .wyr-image {
+  .wyr-image img,
+  .wyr-image span {
     width: 100px;
     height: 100px;
     margin: 0 auto;

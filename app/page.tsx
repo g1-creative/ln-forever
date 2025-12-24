@@ -21,6 +21,7 @@ export default function Home() {
             width={160} 
             height={160}
             className="hero-logo-img"
+            priority
           />
         </div>
         <h1>LN Forever</h1>

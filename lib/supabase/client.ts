@@ -18,7 +18,21 @@ export function createSupabaseClient(): SupabaseClient<Database> | null {
   }
 
   try {
-    return createClient<Database>(supabaseUrl, supabaseAnonKey);
+    return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        // Use localStorage for faster session retrieval
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      },
+      // Optimize realtime and global settings
+      global: {
+        headers: {
+          'x-client-info': 'ln-forever-web',
+        },
+      },
+    });
   } catch (error) {
     console.error('Error creating Supabase client:', error);
     return null;

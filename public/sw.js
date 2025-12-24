@@ -43,10 +43,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Don't cache external images (Unsplash, etc.) - always fetch fresh
+  // Cache external images (Unsplash) for better performance
   if (url.hostname.includes('unsplash.com') || 
       url.hostname.includes('images.unsplash.com')) {
-    event.respondWith(fetch(request));
+    event.respondWith(
+      caches.match(request).then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache);
+            });
+          }
+          return response;
+        });
+      })
+    );
     return;
   }
 
