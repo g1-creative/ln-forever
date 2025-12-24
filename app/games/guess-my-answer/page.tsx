@@ -442,7 +442,7 @@ export default function GuessMyAnswerPage() {
       });
 
       // Store game state in DB
-      await supabase.from('guess_my_answer_state').upsert({
+      await (supabase.from('guess_my_answer_state') as any).upsert({
         lobby_id: currentLobby.id,
         current_turn_user_id: round1Answerer,
         game_data: {
@@ -479,7 +479,7 @@ export default function GuessMyAnswerPage() {
       const currentAnswerer = gamePhase === 'round1' ? scores.round1Answerer : scores.round2Answerer;
       const currentGuesser = gamePhase === 'round1' ? scores.round1Guesser : scores.round2Guesser;
 
-      await supabase.from('guess_my_answer_state').update({
+      await (supabase.from('guess_my_answer_state') as any).update({
         current_turn_user_id: currentGuesser,
         game_data: {
           selectedCategory,
@@ -509,7 +509,7 @@ export default function GuessMyAnswerPage() {
       const isCorrect = selectedGuess === selectedAnswer;
       const newScore = isCorrect ? currentRoundScore + 1 : currentRoundScore;
 
-      await supabase.from('guess_my_answer_state').update({
+      await (supabase.from('guess_my_answer_state') as any).update({
         current_turn_user_id: null,
         game_data: {
           selectedCategory,
@@ -546,7 +546,7 @@ export default function GuessMyAnswerPage() {
           // Update round 1 score and move to round 2
           const updatedScores = { ...scores, round1Score: currentRoundScore };
           
-          await supabase.from('guess_my_answer_state').update({
+          await (supabase.from('guess_my_answer_state') as any).update({
             current_turn_user_id: scores.round2Answerer,
             game_data: {
               selectedCategory,
@@ -569,7 +569,7 @@ export default function GuessMyAnswerPage() {
           // Round 2 finished, show results
           const updatedScores = { ...scores, round2Score: currentRoundScore };
           
-          await supabase.from('guess_my_answer_state').update({
+          await (supabase.from('guess_my_answer_state') as any).update({
             current_turn_user_id: null,
             game_data: {
               selectedCategory,
