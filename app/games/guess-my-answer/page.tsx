@@ -21,7 +21,7 @@ import {
   GuessMyAnswerQuestion,
 } from '@/lib/guess-my-answer-questions';
 import { getFriends } from '@/lib/db/friends';
-import { UserIcon, UsersIcon, CheckCircleIcon, XCircleIcon, PlayIcon } from '@/components/Icons';
+import { CheckCircleIcon, XCircleIcon, PlayIcon } from '@/components/Icons';
 
 type GameState = 'lobby' | 'answering' | 'guessing' | 'revealed' | 'finished';
 type LobbyView = 'create' | 'join' | 'lobby' | 'playing';
