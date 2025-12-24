@@ -247,6 +247,44 @@ export interface Database {
           updated_at?: string
         }
       }
+      moments: {
+        Row: {
+          id: string
+          user_id: string
+          partner_id: string
+          image_url: string
+          caption: string
+          moment_date: string
+          partner_comment: string | null
+          partner_comment_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          partner_id: string
+          image_url: string
+          caption: string
+          moment_date?: string
+          partner_comment?: string | null
+          partner_comment_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          partner_id?: string
+          image_url?: string
+          caption?: string
+          moment_date?: string
+          partner_comment?: string | null
+          partner_comment_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       lobbies: {
         Row: {
           id: string
