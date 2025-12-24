@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const pathname = usePathname();
 
   const isActive = (path: string) => pathname === path;
@@ -47,7 +47,9 @@ export default function Navbar() {
                 Profile
               </Link>
               <div className="navbar-user">
-                <span className="navbar-email">{user.email}</span>
+                <span className="navbar-email">
+                  {profile?.username || profile?.name || user.email?.split('@')[0] || 'User'}
+                </span>
                 <button onClick={signOut} className="navbar-btn">
                   Sign Out
                 </button>

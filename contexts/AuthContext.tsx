@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Get initial session with timeout
     const sessionPromise = supabase.auth.getSession();
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Session check timeout')), 5000)
+      setTimeout(() => reject(new Error('TIMEOUT')), 10000)
     );
 
     Promise.race([sessionPromise, timeoutPromise])
@@ -51,7 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session }, error } = result;
         
         if (error) {
-          console.error('Error getting session:', error);
+          // Only log non-timeout errors
+          if (error.message !== 'TIMEOUT') {
+            console.error('Error getting session:', error);
+          }
           setLoading(false);
           return;
         }
@@ -65,7 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((error) => {
-        console.error('Error in getSession:', error);
+        // Handle timeout gracefully
+        if (error.message === 'TIMEOUT') {
+          console.warn('Session check took longer than expected, continuing without session');
+        } else {
+          console.error('Error in getSession:', error);
+        }
         if (mounted) {
           setLoading(false);
         }
@@ -110,7 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging - increased to 10 seconds for slower connections
       const profilePromise = supabase
         .from('profiles')
         .select('*')
@@ -118,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
       
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
       );
 
       const result: any = await Promise.race([profilePromise, timeoutPromise]);
@@ -130,16 +138,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('Profile not found, will be created on first use');
           setProfile(null);
         } else {
-          console.error('Error fetching profile:', error);
+          // Only log non-timeout errors
+          if (error.message !== 'TIMEOUT') {
+            console.error('Error fetching profile:', error);
+          }
           setProfile(null);
         }
       } else {
         setProfile(data);
       }
     } catch (error: any) {
-      console.error('Error fetching profile:', error);
-      // Don't block the app if profile fetch fails
-      setProfile(null);
+      // Handle timeout gracefully - don't log as error since it's expected behavior
+      if (error.message === 'TIMEOUT') {
+        console.warn('Profile fetch took longer than expected, continuing without profile data');
+        setProfile(null);
+      } else {
+        console.error('Error fetching profile:', error);
+        setProfile(null);
+      }
     } finally {
       setLoading(false);
     }
