@@ -282,19 +282,24 @@ main {
 
 .navbar-notification-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  top: -6px;
+  right: -6px;
+  background: linear-gradient(135deg, #FF6FAE 0%, #7B4DFF 100%);
   color: white;
-  border-radius: var(--radius-full);
-  padding: 2px 6px;
+  border-radius: 50%;
+  padding: 3px 7px;
   font-size: 0.7rem;
   font-weight: 700;
-  min-width: 18px;
+  min-width: 20px;
+  min-height: 20px;
   text-align: center;
   line-height: 1.2;
-  box-shadow: 0 2px 8px rgba(255, 111, 174, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(255, 111, 174, 0.6), 0 0 0 2px rgba(255, 255, 255, 0.3);
   animation: pulse 2s infinite;
+  z-index: 10;
 }
 
 @keyframes pulse {

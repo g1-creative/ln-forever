@@ -702,58 +702,58 @@ export default function TwentyQuestionsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-800 to-teal-800 py-8 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-800 to-teal-800 py-3 sm:py-6 px-3 sm:px-4">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <Link href="/games" className="text-white hover:text-green-300 transition">
-              ← Back to Games
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <Link href="/games" className="text-white hover:text-green-300 transition text-sm sm:text-base flex items-center gap-1">
+              <span className="text-lg">←</span> <span className="hidden sm:inline">Back</span>
             </Link>
-            <h1 className="text-4xl font-bold text-white">20 Questions</h1>
-            <div className="w-24"></div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center flex-1">20 Questions</h1>
+            <div className="w-12 sm:w-24"></div>
           </div>
 
           {error && (
-            <div className="bg-red-500/20 border border-red-500 text-white p-4 rounded-lg mb-4">
+            <div className="bg-red-500/20 border border-red-500 text-white p-3 sm:p-4 rounded-lg mb-3 sm:mb-4 text-sm sm:text-base">
               {error}
             </div>
           )}
 
           {/* Create Lobby View */}
           {lobbyView === 'create' && (
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 text-white">
-              <h2 className="text-2xl font-bold mb-6 text-center">Get Started</h2>
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 md:p-8 text-white">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">Get Started</h2>
               
               {invitations.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold mb-3">Pending Invitations</h3>
+                <div className="mb-4 sm:mb-6">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">Pending Invitations</h3>
                   <div className="space-y-2">
                     {invitations.map((invitation) => (
                       <div
                         key={invitation.id}
-                        className="bg-white/10 p-4 rounded-lg flex items-center justify-between"
+                        className="bg-white/10 p-3 sm:p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-3xl">
-                            {AVATAR_EMOJIS[invitation.inviter_profile?.avatar_emoji || 'avatar1']}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <span className="text-2xl sm:text-3xl flex-shrink-0">
+                            {AVATAR_EMOJIS[invitation.inviter_profile?.avatar_emoji || invitation.inviter?.avatar_selection || 'avatar1']}
                           </span>
-                          <div>
-                            <p className="font-bold">{invitation.inviter_profile?.display_name}</p>
-                            <p className="text-sm text-green-200">invited you to play</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-sm sm:text-base truncate">{invitation.inviter_profile?.display_name || invitation.inviter?.name || 'Unknown'}</p>
+                            <p className="text-xs sm:text-sm text-green-200">invited you to play</p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 w-full sm:w-auto">
                           <button
                             onClick={() => handleAcceptInvitation(invitation.id, invitation.lobby_id)}
                             disabled={loading}
-                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                            className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg disabled:opacity-50 text-sm sm:text-base font-semibold min-h-[44px] sm:min-h-0"
                           >
                             Accept
                           </button>
                           <button
                             onClick={() => handleDeclineInvitation(invitation.id)}
                             disabled={loading}
-                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                            className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-2.5 sm:py-2 rounded-lg disabled:opacity-50 text-sm sm:text-base font-semibold min-h-[44px] sm:min-h-0"
                           >
                             Decline
                           </button>
@@ -767,7 +767,7 @@ export default function TwentyQuestionsPage() {
               <button
                 onClick={handleCreateLobby}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl transition disabled:opacity-50 text-base sm:text-lg min-h-[48px] sm:min-h-0"
               >
                 {loading ? 'Creating...' : 'Create New Lobby'}
               </button>
@@ -776,34 +776,34 @@ export default function TwentyQuestionsPage() {
 
           {/* Lobby View */}
           {lobbyView === 'lobby' && currentLobby && (
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 text-white">
-              <h2 className="text-2xl font-bold mb-6 text-center">Lobby</h2>
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 md:p-8 text-white">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center">Lobby</h2>
 
-              <div className="mb-6">
-                <h3 className="text-xl font-bold mb-3">Players ({currentLobby.participants.length}/{currentLobby.max_players})</h3>
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">Players ({currentLobby.participants.length}/{currentLobby.max_players})</h3>
                 <div className="space-y-2">
                   {currentLobby.participants.map((participant) => (
                     <div
                       key={participant.id}
-                      className="bg-white/10 p-4 rounded-lg flex items-center justify-between"
+                      className="bg-white/10 p-3 sm:p-4 rounded-lg flex items-center justify-between"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-3xl">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <span className="text-2xl sm:text-3xl flex-shrink-0">
                           {AVATAR_EMOJIS[participant.profile?.avatar_selection || 'avatar1']}
                         </span>
-                        <div>
-                          <p className="font-bold">
-                            {participant.profile?.name}
-                            {participant.user_id === currentLobby.host_id && ' (Host)'}
-                            {participant.user_id === user?.id && ' (You)'}
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm sm:text-base truncate">
+                            {participant.profile?.name || 'Unknown'}
+                            {participant.user_id === currentLobby.host_id && <span className="text-green-300"> (Host)</span>}
+                            {participant.user_id === user?.id && <span className="text-blue-300"> (You)</span>}
                           </p>
                         </div>
                       </div>
-                      <div>
+                      <div className="flex-shrink-0">
                         {participant.is_ready ? (
-                          <CheckCircleIcon className="w-6 h-6 text-green-400" />
+                          <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
                         ) : (
-                          <XCircleIcon className="w-6 h-6 text-red-400" />
+                          <XCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
                         )}
                       </div>
                     </div>
@@ -811,11 +811,11 @@ export default function TwentyQuestionsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5 sm:gap-3">
                 {isHost && currentLobby.participants.length < currentLobby.max_players && (
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition"
+                    className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition text-sm sm:text-base min-h-[44px] sm:min-h-0"
                   >
                     Invite Friend
                   </button>
@@ -824,7 +824,7 @@ export default function TwentyQuestionsPage() {
                 <button
                   onClick={handleToggleReady}
                   disabled={loading}
-                  className={`font-bold py-3 px-6 rounded-lg transition disabled:opacity-50 ${
+                  className={`font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition disabled:opacity-50 text-sm sm:text-base min-h-[44px] sm:min-h-0 ${
                     currentLobby.participants.find(p => p.user_id === user?.id)?.is_ready
                       ? 'bg-red-500 hover:bg-red-600'
                       : 'bg-green-500 hover:bg-green-600'
@@ -841,9 +841,9 @@ export default function TwentyQuestionsPage() {
                     <button
                       onClick={handleStartGame}
                       disabled={loading}
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2 text-base sm:text-lg min-h-[48px] sm:min-h-0"
                     >
-                      <PlayIcon className="w-5 h-5" />
+                      <PlayIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                       Start Game
                     </button>
                   )}
@@ -851,7 +851,7 @@ export default function TwentyQuestionsPage() {
                 <button
                   onClick={handleLeaveLobby}
                   disabled={loading}
-                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition disabled:opacity-50 text-sm sm:text-base min-h-[44px] sm:min-h-0"
                 >
                   Leave Lobby
                 </button>
@@ -861,28 +861,28 @@ export default function TwentyQuestionsPage() {
 
           {/* Playing View */}
           {lobbyView === 'playing' && currentLobby && (
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 text-white">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 sm:p-6 md:p-8 text-white">
               {/* Category Selection */}
               {gamePhase === 'categorySelect' && (
                 <div>
-                  <h2 className="text-3xl font-bold mb-6 text-center">Choose a Category</h2>
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">Choose a Category</h2>
                   {isHost ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {getAllCategories().map((category) => (
                         <button
                           key={category.id}
                           onClick={() => handleCategorySelect(category.id)}
                           disabled={loading}
-                          className="bg-white/20 hover:bg-white/30 p-6 rounded-xl transition disabled:opacity-50 text-left"
+                          className="bg-white/20 hover:bg-white/30 active:bg-white/40 p-4 sm:p-5 md:p-6 rounded-xl transition disabled:opacity-50 text-left min-h-[120px] sm:min-h-[140px]"
                         >
-                          <div className="text-5xl mb-3">{category.emoji}</div>
-                          <h3 className="text-2xl font-bold mb-2">{category.name}</h3>
-                          <p className="text-green-200">{category.description}</p>
+                          <div className="text-4xl sm:text-5xl mb-2 sm:mb-3">{category.emoji}</div>
+                          <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">{category.name}</h3>
+                          <p className="text-xs sm:text-sm text-green-200">{category.description}</p>
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center text-xl">
+                    <div className="text-center text-base sm:text-lg md:text-xl py-8">
                       Waiting for host to select a category...
                     </div>
                   )}
@@ -892,21 +892,21 @@ export default function TwentyQuestionsPage() {
               {/* Item Selection */}
               {gamePhase === 'itemSelect' && categoryInfo && (
                 <div>
-                  <h2 className="text-3xl font-bold mb-6 text-center">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-center">
                     Select an Item from {categoryInfo.emoji} {categoryInfo.name}
                   </h2>
                   {isHost ? (
                     <div>
-                      <p className="text-center mb-4 text-green-200">
+                      <p className="text-center mb-3 sm:mb-4 text-green-200 text-sm sm:text-base px-2">
                         Think of an item from this category. You can select one randomly or choose your own.
                       </p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 max-h-96 overflow-y-auto">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4 max-h-[50vh] sm:max-h-96 overflow-y-auto overscroll-contain">
                         {categoryInfo.items.map((item, index) => (
                           <button
                             key={index}
                             onClick={() => handleItemSelect(item)}
                             disabled={loading}
-                            className="bg-white/20 hover:bg-white/30 p-3 rounded-lg transition disabled:opacity-50"
+                            className="bg-white/20 hover:bg-white/30 active:bg-white/40 p-2.5 sm:p-3 rounded-lg transition disabled:opacity-50 text-xs sm:text-sm font-medium min-h-[44px] sm:min-h-0"
                           >
                             {item}
                           </button>
@@ -918,13 +918,13 @@ export default function TwentyQuestionsPage() {
                           if (randomItem) handleItemSelect(randomItem);
                         }}
                         disabled={loading}
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition disabled:opacity-50 text-sm sm:text-base min-h-[48px] sm:min-h-0"
                       >
                         🎲 Pick Random Item
                       </button>
                     </div>
                   ) : (
-                    <div className="text-center text-xl">
+                    <div className="text-center text-base sm:text-lg md:text-xl py-8">
                       Waiting for host to select an item...
                     </div>
                   )}
@@ -934,16 +934,16 @@ export default function TwentyQuestionsPage() {
               {/* Playing Game */}
               {gamePhase === 'playing' && (
                 <div>
-                  <div className="mb-6 text-center">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="text-lg">
+                  <div className="mb-4 sm:mb-6 text-center">
+                    <div className="flex items-center justify-between mb-3 sm:mb-4 px-2">
+                      <div className="text-sm sm:text-base md:text-lg">
                         {categoryInfo?.emoji} {categoryInfo?.name}
                       </div>
-                      <div className="text-lg font-bold">
-                        Questions Left: {questionsRemaining}
+                      <div className="text-base sm:text-lg font-bold bg-white/20 px-2 sm:px-3 py-1 rounded-lg">
+                        {questionsRemaining}
                       </div>
                     </div>
-                    <div className="text-sm text-green-200 mb-2">
+                    <div className="text-xs sm:text-sm text-green-200 mb-2 px-2">
                       {isAnswerer && `You are the Answerer. The secret item is: ${secretItem}`}
                       {isGuesser && 'You are the Guesser. Ask yes/no questions to find the item!'}
                     </div>
@@ -951,32 +951,32 @@ export default function TwentyQuestionsPage() {
 
                   {/* Questions Asked */}
                   {questionsAsked.length > 0 && (
-                    <div className="bg-white/20 p-4 rounded-xl mb-4">
-                      <h3 className="font-bold mb-2">Questions Asked:</h3>
+                    <div className="bg-white/20 p-3 sm:p-4 rounded-xl mb-3 sm:mb-4 max-h-[40vh] sm:max-h-[50vh] overflow-y-auto overscroll-contain">
+                      <h3 className="font-bold mb-2 text-sm sm:text-base">Questions Asked:</h3>
                       <div className="space-y-2">
                         {questionsAsked.map((q, index) => (
-                          <div key={index} className="bg-white/10 p-3 rounded-lg">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">Q{q.question_number}: {q.question}</span>
+                          <div key={index} className="bg-white/10 p-2.5 sm:p-3 rounded-lg">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                              <span className="text-xs sm:text-sm flex-1 break-words">Q{q.question_number}: {q.question}</span>
                               {isAnswerer && q.answer === 'maybe' ? (
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 w-full sm:w-auto">
                                   <button
                                     onClick={() => handleAnswerQuestion(index, 'yes')}
                                     disabled={loading}
-                                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                                    className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 active:bg-green-700 text-white px-3 sm:px-3 py-2 sm:py-1 rounded text-xs sm:text-sm disabled:opacity-50 font-semibold min-h-[40px] sm:min-h-0"
                                   >
                                     Yes
                                   </button>
                                   <button
                                     onClick={() => handleAnswerQuestion(index, 'no')}
                                     disabled={loading}
-                                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                                    className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-3 sm:px-3 py-2 sm:py-1 rounded text-xs sm:text-sm disabled:opacity-50 font-semibold min-h-[40px] sm:min-h-0"
                                   >
                                     No
                                   </button>
                                 </div>
                               ) : (
-                                <span className={`text-sm font-bold ${q.answer === 'yes' ? 'text-green-400' : 'text-red-400'}`}>
+                                <span className={`text-xs sm:text-sm font-bold flex-shrink-0 ${q.answer === 'yes' ? 'text-green-400' : 'text-red-400'}`}>
                                   {q.answer === 'yes' ? '✓ Yes' : '✗ No'}
                                 </span>
                               )}
@@ -1010,28 +1010,28 @@ export default function TwentyQuestionsPage() {
 
                   {/* Guesser's Turn */}
                   {isGuesser && gameStatus === 'asking' && questionsRemaining > 0 && (
-                    <div className="bg-white/20 p-6 rounded-xl">
-                      <h3 className="text-xl font-bold mb-4">Ask a Yes/No Question</h3>
+                    <div className="bg-white/20 p-4 sm:p-6 rounded-xl sticky bottom-0 sm:relative">
+                      <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Ask a Yes/No Question</h3>
                       <input
                         type="text"
                         value={currentQuestion}
                         onChange={(e) => setCurrentQuestion(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSubmitQuestion()}
                         placeholder="e.g., Is it an animal?"
-                        className="w-full bg-white/20 border border-white/30 rounded-lg p-3 text-white placeholder-white/50 mb-3"
+                        className="w-full bg-white/20 border border-white/30 rounded-lg p-3 sm:p-3 text-white placeholder-white/50 mb-3 text-sm sm:text-base min-h-[44px]"
                       />
-                      <div className="flex gap-3">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <button
                           onClick={handleSubmitQuestion}
                           disabled={loading || !currentQuestion.trim() || questionsRemaining <= 0}
-                          className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                          className="flex-1 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition disabled:opacity-50 text-sm sm:text-base min-h-[48px] sm:min-h-0"
                         >
                           Ask Question
                         </button>
                         <button
                           onClick={() => setShowGuessModal(true)}
                           disabled={loading || questionsRemaining <= 0}
-                          className="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                          className="flex-1 bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition disabled:opacity-50 text-sm sm:text-base min-h-[48px] sm:min-h-0"
                         >
                           Make Guess
                         </button>
@@ -1041,9 +1041,9 @@ export default function TwentyQuestionsPage() {
 
                   {/* Answerer's Turn */}
                   {isAnswerer && gameStatus === 'asking' && (
-                    <div className="bg-white/20 p-6 rounded-xl">
-                      <h3 className="text-xl font-bold mb-4">Waiting for Guesser...</h3>
-                      <p className="text-green-200">
+                    <div className="bg-white/20 p-4 sm:p-6 rounded-xl">
+                      <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Waiting for Guesser...</h3>
+                      <p className="text-green-200 text-sm sm:text-base">
                         The guesser is asking questions. Answer them when they appear above.
                       </p>
                     </div>
@@ -1051,15 +1051,15 @@ export default function TwentyQuestionsPage() {
 
                   {/* Out of Questions */}
                   {questionsRemaining <= 0 && !winner && (
-                    <div className="bg-yellow-500/20 border border-yellow-500 p-6 rounded-xl text-center">
-                      <p className="text-xl font-bold mb-2">Out of Questions!</p>
-                      <p className="text-green-200">
+                    <div className="bg-yellow-500/20 border border-yellow-500 p-4 sm:p-6 rounded-xl text-center">
+                      <p className="text-lg sm:text-xl font-bold mb-2">Out of Questions!</p>
+                      <p className="text-green-200 text-sm sm:text-base mb-3 sm:mb-4">
                         {isAnswerer ? 'You win! The guesser couldn\'t guess your item.' : 'You ran out of questions. The answerer wins!'}
                       </p>
                       {isHost && (
                         <button
                           onClick={handleGameOver}
-                          className="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg"
+                          className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold py-2.5 sm:py-2 px-4 rounded-lg text-sm sm:text-base min-h-[44px] sm:min-h-0"
                         >
                           End Game
                         </button>
@@ -1072,38 +1072,38 @@ export default function TwentyQuestionsPage() {
               {/* Results */}
               {gamePhase === 'results' && (
                 <div className="text-center">
-                  <h2 className="text-4xl font-bold mb-8">Game Over!</h2>
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 md:mb-8">Game Over!</h2>
 
-                  <div className="bg-white/20 p-6 rounded-xl mb-6">
-                    <h3 className="text-2xl font-bold mb-4">Results</h3>
+                  <div className="bg-white/20 p-4 sm:p-5 md:p-6 rounded-xl mb-4 sm:mb-6">
+                    <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Results</h3>
                     
-                    <div className="mb-4">
-                      <p className="text-lg mb-2">Secret Item: <span className="font-bold">{secretItem}</span></p>
-                      <p className="text-lg mb-2">Questions Asked: {questionsAsked.length}</p>
-                      <p className="text-lg mb-2">Guesses Made: {guessesMade.length}</p>
+                    <div className="mb-3 sm:mb-4 space-y-1.5 sm:space-y-2">
+                      <p className="text-sm sm:text-base md:text-lg">Secret Item: <span className="font-bold">{secretItem}</span></p>
+                      <p className="text-sm sm:text-base md:text-lg">Questions Asked: {questionsAsked.length}</p>
+                      <p className="text-sm sm:text-base md:text-lg">Guesses Made: {guessesMade.length}</p>
                     </div>
 
                     {winner && (
-                      <div className="bg-green-500/30 p-4 rounded-lg mb-4">
-                        <p className="text-3xl font-bold text-green-400">
-                          {getParticipantProfile(winner)?.profile?.name} Wins! 🏆
+                      <div className="bg-green-500/30 p-3 sm:p-4 rounded-lg mb-3 sm:mb-4">
+                        <p className="text-xl sm:text-2xl md:text-3xl font-bold text-green-400">
+                          {getParticipantProfile(winner)?.profile?.name || 'Player'} Wins! 🏆
                         </p>
                         {winner === guesserId && (
-                          <p className="text-lg mt-2">They guessed correctly!</p>
+                          <p className="text-sm sm:text-base md:text-lg mt-2">They guessed correctly!</p>
                         )}
                         {winner === answererId && (
-                          <p className="text-lg mt-2">The guesser ran out of questions!</p>
+                          <p className="text-sm sm:text-base md:text-lg mt-2">The guesser ran out of questions!</p>
                         )}
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-2.5 sm:gap-3">
                     {isHost && (
                       <button
                         onClick={handlePlayAgain}
                         disabled={loading}
-                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition disabled:opacity-50"
+                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3.5 sm:py-4 px-4 sm:px-6 rounded-xl transition disabled:opacity-50 text-base sm:text-lg min-h-[48px] sm:min-h-0"
                       >
                         Play Again
                       </button>
@@ -1112,7 +1112,7 @@ export default function TwentyQuestionsPage() {
                     <button
                       onClick={handleLeaveLobby}
                       disabled={loading}
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                      className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition disabled:opacity-50 text-sm sm:text-base min-h-[44px] sm:min-h-0"
                     >
                       Leave Game
                     </button>
@@ -1124,9 +1124,12 @@ export default function TwentyQuestionsPage() {
 
           {/* Guess Modal */}
           {showGuessModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-gradient-to-br from-green-900 to-emerald-900 rounded-xl p-6 max-w-md w-full">
-                <h3 className="text-2xl font-bold text-white mb-4">Make Your Guess</h3>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => {
+              setShowGuessModal(false);
+              setCurrentGuess('');
+            }}>
+              <div className="bg-gradient-to-br from-green-900 to-emerald-900 rounded-xl p-4 sm:p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Make Your Guess</h3>
                 <input
                   type="text"
                   value={currentGuess}
@@ -1138,10 +1141,10 @@ export default function TwentyQuestionsPage() {
                     }
                   }}
                   placeholder="What is your guess?"
-                  className="w-full bg-white/20 border border-white/30 rounded-lg p-3 text-white placeholder-white/50 mb-4"
+                  className="w-full bg-white/20 border border-white/30 rounded-lg p-3 text-white placeholder-white/50 mb-3 sm:mb-4 text-sm sm:text-base min-h-[44px]"
                   autoFocus
                 />
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   <button
                     onClick={() => {
                       if (currentGuess.trim()) {
@@ -1150,7 +1153,7 @@ export default function TwentyQuestionsPage() {
                       }
                     }}
                     disabled={loading || !currentGuess.trim()}
-                    className="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                    className="flex-1 bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition disabled:opacity-50 text-sm sm:text-base min-h-[48px] sm:min-h-0"
                   >
                     Submit Guess
                   </button>
@@ -1159,7 +1162,7 @@ export default function TwentyQuestionsPage() {
                       setShowGuessModal(false);
                       setCurrentGuess('');
                     }}
-                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition"
+                    className="flex-1 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold py-3 sm:py-3 px-4 sm:px-6 rounded-lg transition text-sm sm:text-base min-h-[48px] sm:min-h-0"
                   >
                     Cancel
                   </button>
@@ -1170,27 +1173,27 @@ export default function TwentyQuestionsPage() {
 
           {/* Invite Friend Modal */}
           {showInviteModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-gradient-to-br from-green-900 to-emerald-900 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-                <h3 className="text-2xl font-bold text-white mb-4">Invite a Friend</h3>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setShowInviteModal(false)}>
+              <div className="bg-gradient-to-br from-green-900 to-emerald-900 rounded-xl p-4 sm:p-6 max-w-md w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Invite a Friend</h3>
                 
                 {friends.length === 0 ? (
-                  <p className="text-white/70 text-center py-4">
+                  <p className="text-white/70 text-center py-4 text-sm sm:text-base">
                     No friends available. Add some friends first!
                   </p>
                 ) : (
-                  <div className="space-y-2 mb-4">
+                  <div className="space-y-2 mb-3 sm:mb-4 max-h-[50vh] overflow-y-auto">
                     {friends.map((friend) => (
                       <button
                         key={friend.friend_id}
                         onClick={() => handleInviteFriend(friend.friend_id)}
                         disabled={loading}
-                        className="w-full bg-white/10 hover:bg-white/20 p-4 rounded-lg flex items-center gap-3 transition disabled:opacity-50 text-white"
+                        className="w-full bg-white/10 hover:bg-white/20 active:bg-white/30 p-3 sm:p-4 rounded-lg flex items-center gap-2 sm:gap-3 transition disabled:opacity-50 text-white min-h-[56px] sm:min-h-0"
                       >
-                        <span className="text-3xl">
+                        <span className="text-2xl sm:text-3xl flex-shrink-0">
                           {AVATAR_EMOJIS[friend.avatar_selection || 'avatar1']}
                         </span>
-                        <span className="font-bold">{friend.name || friend.username || 'Unknown'}</span>
+                        <span className="font-bold text-sm sm:text-base truncate flex-1 text-left">{friend.name || friend.username || 'Unknown'}</span>
                       </button>
                     ))}
                   </div>
@@ -1198,7 +1201,7 @@ export default function TwentyQuestionsPage() {
 
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition"
+                  className="w-full bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold py-3 sm:py-2 px-4 rounded-lg transition text-sm sm:text-base min-h-[44px] sm:min-h-0"
                 >
                   Cancel
                 </button>
