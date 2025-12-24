@@ -3234,3 +3234,172 @@ main {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Enhanced Would You Rather Styles */
+.stat-badge.clickable {
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.stat-badge.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 111, 174, 0.3);
+}
+
+.category-icon {
+  font-size: 1.25rem;
+  margin-right: var(--space-xs);
+}
+
+.category-text {
+  font-size: 0.875rem;
+}
+
+.wyr-category-badge-small {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: linear-gradient(135deg, rgba(255, 111, 174, 0.1) 0%, rgba(123, 77, 255, 0.1) 100%);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wyr-difficulty-badge-small {
+  display: inline-block;
+  padding: var(--space-xs) var(--space-md);
+  background: var(--lavender);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wyr-question-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.wyr-card.animating {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.wyr-stats-section {
+  animation: slideUp 0.4s ease-out;
+}
+
+.wyr-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.wyr-stat-item {
+  padding: var(--space-lg);
+  background: linear-gradient(135deg, var(--lavender) 0%, rgba(255, 180, 162, 0.2) 100%);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  border: 1px solid var(--lavender);
+}
+
+.wyr-stat-item.full-width {
+  grid-column: 1 / -1;
+  text-align: left;
+}
+
+.wyr-stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: var(--space-xs);
+}
+
+.wyr-stat-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--charcoal);
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wyr-category-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.wyr-category-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--lavender);
+}
+
+.wyr-category-icon {
+  font-size: 1.5rem;
+}
+
+.wyr-category-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--charcoal);
+}
+
+.wyr-category-count {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.discussion-tips {
+  margin-top: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.tip-item {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--charcoal);
+  opacity: 0.8;
+}
+
+.wyr-discussion-prompt.show {
+  animation: slideUp 0.5s ease-out;
+}
+
+.wyr-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+.wyr-actions .action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wyr-actions .action-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}

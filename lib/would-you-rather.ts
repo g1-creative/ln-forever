@@ -6,6 +6,13 @@ export interface WouldYouRatherQuestion {
   difficulty: 'easy' | 'medium' | 'hard';
   imageA?: string;
   imageB?: string;
+  discussionPrompt?: string;
+}
+
+export interface QuestionStats {
+  totalAnswered: number;
+  categoryBreakdown: Record<string, number>;
+  difficultyBreakdown: Record<string, number>;
 }
 
 export const wouldYouRatherQuestions: WouldYouRatherQuestion[] = [
@@ -222,22 +229,216 @@ export const wouldYouRatherQuestions: WouldYouRatherQuestion[] = [
     category: 'lifestyle',
     difficulty: 'medium',
   },
+  // More Easy Questions
+  {
+    id: 'wyr-29',
+    optionA: 'Read a book',
+    optionB: 'Watch a movie',
+    category: 'daily',
+    difficulty: 'easy',
+  },
+  {
+    id: 'wyr-30',
+    optionA: 'Have breakfast in bed',
+    optionB: 'Have dinner at a fancy restaurant',
+    category: 'romance',
+    difficulty: 'easy',
+  },
+  {
+    id: 'wyr-31',
+    optionA: 'Speak 10 languages fluently',
+    optionB: 'Be a master of 10 musical instruments',
+    category: 'fun',
+    difficulty: 'easy',
+  },
+  {
+    id: 'wyr-32',
+    optionA: 'Pizza for life',
+    optionB: 'Ice cream for life',
+    category: 'food',
+    difficulty: 'easy',
+  },
+  {
+    id: 'wyr-33',
+    optionA: 'Always have perfect weather',
+    optionB: 'Always have perfect health',
+    category: 'lifestyle',
+    difficulty: 'easy',
+  },
+  {
+    id: 'wyr-34',
+    optionA: 'Have a pet dog',
+    optionB: 'Have a pet cat',
+    category: 'daily',
+    difficulty: 'easy',
+  },
+  // More Medium Questions
+  {
+    id: 'wyr-35',
+    optionA: 'Be able to read minds',
+    optionB: 'Be able to see the future',
+    category: 'deep',
+    difficulty: 'medium',
+  },
+  {
+    id: 'wyr-36',
+    optionA: 'Have a romantic dinner at home',
+    optionB: 'Have a romantic dinner at a restaurant',
+    category: 'romance',
+    difficulty: 'medium',
+  },
+  {
+    id: 'wyr-37',
+    optionA: 'Work 4 days a week',
+    optionB: 'Work 5 days but shorter hours',
+    category: 'work',
+    difficulty: 'medium',
+  },
+  {
+    id: 'wyr-38',
+    optionA: 'Visit 10 countries for 1 week each',
+    optionB: 'Visit 1 country for 10 weeks',
+    category: 'travel',
+    difficulty: 'medium',
+  },
+  {
+    id: 'wyr-39',
+    optionA: 'Have a surprise party thrown for you',
+    optionB: 'Plan a surprise party for someone else',
+    category: 'fun',
+    difficulty: 'medium',
+  },
+  {
+    id: 'wyr-40',
+    optionA: 'Only eat sweet foods',
+    optionB: 'Only eat savory foods',
+    category: 'food',
+    difficulty: 'medium',
+  },
+  // More Hard Questions
+  {
+    id: 'wyr-41',
+    optionA: 'Know all the answers but never understand why',
+    optionB: 'Understand everything but never know the answers',
+    category: 'deep',
+    difficulty: 'hard',
+  },
+  {
+    id: 'wyr-42',
+    optionA: 'Have a long-distance relationship that works',
+    optionB: 'Have a close relationship with constant conflict',
+    category: 'romance',
+    difficulty: 'hard',
+  },
+  {
+    id: 'wyr-43',
+    optionA: 'Be the smartest person in the room',
+    optionB: 'Be the kindest person in the room',
+    category: 'deep',
+    difficulty: 'hard',
+  },
+  {
+    id: 'wyr-44',
+    optionA: 'Have unlimited money but no time',
+    optionB: 'Have unlimited time but no money',
+    category: 'lifestyle',
+    difficulty: 'hard',
+  },
+  {
+    id: 'wyr-45',
+    optionA: 'Be remembered for 100 years',
+    optionB: 'Be forgotten but live happily',
+    category: 'deep',
+    difficulty: 'hard',
+  },
 ];
 
-export function getRandomQuestion(category?: string, difficulty?: string): WouldYouRatherQuestion | null {
+export function getRandomQuestion(
+  category?: string, 
+  difficulty?: string,
+  excludeIds: string[] = []
+): WouldYouRatherQuestion | null {
   let filtered = wouldYouRatherQuestions;
   
   if (category && category !== 'all') {
     filtered = filtered.filter(q => q.category === category);
   }
   
-  if (difficulty) {
+  if (difficulty && difficulty !== 'all') {
     filtered = filtered.filter(q => q.difficulty === difficulty);
+  }
+  
+  // Exclude already shown questions
+  if (excludeIds.length > 0) {
+    filtered = filtered.filter(q => !excludeIds.includes(q.id));
+  }
+  
+  if (filtered.length === 0) {
+    // If all questions have been shown, reset and allow repeats
+    filtered = wouldYouRatherQuestions;
+    if (category && category !== 'all') {
+      filtered = filtered.filter(q => q.category === category);
+    }
+    if (difficulty && difficulty !== 'all') {
+      filtered = filtered.filter(q => q.difficulty === difficulty);
+    }
   }
   
   if (filtered.length === 0) return null;
   
   return filtered[Math.floor(Math.random() * filtered.length)];
+}
+
+export function getDiscussionPrompt(question: WouldYouRatherQuestion, selectedOption: 'A' | 'B'): string {
+  if (question.discussionPrompt) {
+    return question.discussionPrompt;
+  }
+  
+  const prompts: Record<string, string[]> = {
+    daily: [
+      "What makes this choice better for your daily life?",
+      "How would this affect your routine?",
+      "What are the practical benefits of this choice?",
+    ],
+    travel: [
+      "Where would you go first with this choice?",
+      "What adventure would this lead to?",
+      "How would this change your travel experiences?",
+    ],
+    work: [
+      "How would this impact your career?",
+      "What opportunities would this create?",
+      "How would this affect your work-life balance?",
+    ],
+    romance: [
+      "How would this strengthen your relationship?",
+      "What romantic moments would this create?",
+      "How would this make your partner feel?",
+    ],
+    fun: [
+      "What fun memories would this create?",
+      "How would you make the most of this?",
+      "What hilarious situations would this lead to?",
+    ],
+    deep: [
+      "What does this choice say about your values?",
+      "How would this shape who you are?",
+      "What deeper meaning does this have for you?",
+    ],
+    food: [
+      "What meals would you create with this?",
+      "How would this change your dining experiences?",
+      "What flavors and memories would this bring?",
+    ],
+    lifestyle: [
+      "How would this improve your quality of life?",
+      "What habits would this help you build?",
+      "How would this make your days better?",
+    ],
+  };
+  
+  const categoryPrompts = prompts[question.category] || prompts.daily;
+  return categoryPrompts[Math.floor(Math.random() * categoryPrompts.length)];
 }
 
 export function getQuestionsByCategory(category: string): WouldYouRatherQuestion[] {
@@ -252,7 +453,7 @@ export function getQuestionCount(category?: string, difficulty?: string): number
     filtered = filtered.filter(q => q.category === category);
   }
   
-  if (difficulty) {
+  if (difficulty && difficulty !== 'all') {
     filtered = filtered.filter(q => q.difficulty === difficulty);
   }
   

@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { 
   getRandomQuestion, 
   getQuestionCount,
+  getDiscussionPrompt,
   WouldYouRatherQuestion 
 } from '@/lib/would-you-rather';
 
@@ -21,17 +22,22 @@ export default function WouldYouRatherPage() {
   const [isRevealing, setIsRevealing] = useState(false);
   const [questionCount, setQuestionCount] = useState(0);
   const [questionsAnswered, setQuestionsAnswered] = useState(0);
+  const [answeredQuestionIds, setAnsweredQuestionIds] = useState<string[]>([]);
+  const [discussionPrompt, setDiscussionPrompt] = useState<string>('');
+  const [showStats, setShowStats] = useState(false);
+  const [categoryStats, setCategoryStats] = useState<Record<string, number>>({});
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  const categories: { value: Category; label: string }[] = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'daily', label: 'Daily Life' },
-    { value: 'travel', label: 'Travel' },
-    { value: 'work', label: 'Work' },
-    { value: 'romance', label: 'Romance' },
-    { value: 'fun', label: 'Fun / Silly' },
-    { value: 'deep', label: 'Deep Talk' },
-    { value: 'food', label: 'Food' },
-    { value: 'lifestyle', label: 'Lifestyle' },
+  const categories: { value: Category; label: string; icon: string }[] = [
+    { value: 'all', label: 'All Categories', icon: '🌟' },
+    { value: 'daily', label: 'Daily Life', icon: '🏠' },
+    { value: 'travel', label: 'Travel', icon: '✈️' },
+    { value: 'work', label: 'Work', icon: '💼' },
+    { value: 'romance', label: 'Romance', icon: '💕' },
+    { value: 'fun', label: 'Fun / Silly', icon: '🎉' },
+    { value: 'deep', label: 'Deep Talk', icon: '💭' },
+    { value: 'food', label: 'Food', icon: '🍕' },
+    { value: 'lifestyle', label: 'Lifestyle', icon: '✨' },
   ];
 
   useEffect(() => {
@@ -49,27 +55,49 @@ export default function WouldYouRatherPage() {
   const handleGetQuestion = () => {
     setSelectedOption(null);
     setIsRevealing(false);
+    setDiscussionPrompt('');
+    setIsAnimating(true);
     
-    const question = getRandomQuestion(
-      selectedCategory === 'all' ? undefined : selectedCategory,
-      selectedDifficulty === 'all' ? undefined : selectedDifficulty
-    );
-    
-    if (question) {
-      setCurrentQuestion(question);
-    }
+    // Animate out
+    setTimeout(() => {
+      const question = getRandomQuestion(
+        selectedCategory === 'all' ? undefined : selectedCategory,
+        selectedDifficulty === 'all' ? undefined : selectedDifficulty,
+        answeredQuestionIds
+      );
+      
+      if (question) {
+        setCurrentQuestion(question);
+        setIsAnimating(false);
+      }
+    }, 300);
   };
 
   const handleSelectOption = (option: 'A' | 'B') => {
-    if (selectedOption) return; // Already selected
+    if (selectedOption || !currentQuestion) return; // Already selected
     
     setSelectedOption(option);
     setIsRevealing(true);
     setQuestionsAnswered(prev => prev + 1);
     
+    // Track answered question
+    if (currentQuestion.id && !answeredQuestionIds.includes(currentQuestion.id)) {
+      setAnsweredQuestionIds(prev => [...prev, currentQuestion.id]);
+    }
+    
+    // Update category stats
+    setCategoryStats(prev => ({
+      ...prev,
+      [currentQuestion.category]: (prev[currentQuestion.category] || 0) + 1,
+    }));
+    
+    // Get discussion prompt
+    const prompt = getDiscussionPrompt(currentQuestion, option);
+    setDiscussionPrompt(prompt);
+    
     // Haptic feedback
     if (navigator.vibrate) {
-      navigator.vibrate(50);
+      navigator.vibrate([50, 30, 50]);
     }
   };
 
@@ -104,7 +132,46 @@ export default function WouldYouRatherPage() {
             <span className="stat-label">Answered</span>
             <span className="stat-value">{questionsAnswered}</span>
           </div>
+          {questionsAnswered > 0 && (
+            <div className="stat-badge clickable" onClick={() => setShowStats(!showStats)}>
+              <span className="stat-label">Stats</span>
+              <span className="stat-value">📊</span>
+            </div>
+          )}
         </div>
+
+        {showStats && questionsAnswered > 0 && (
+          <div className="section wyr-stats-section">
+            <h3 className="section-subtitle">Your Session Stats</h3>
+            <div className="wyr-stats-grid">
+              <div className="wyr-stat-item">
+                <div className="wyr-stat-value">{questionsAnswered}</div>
+                <div className="wyr-stat-label">Questions Answered</div>
+              </div>
+              <div className="wyr-stat-item">
+                <div className="wyr-stat-value">{answeredQuestionIds.length}</div>
+                <div className="wyr-stat-label">Unique Questions</div>
+              </div>
+              {Object.keys(categoryStats).length > 0 && (
+                <div className="wyr-stat-item full-width">
+                  <div className="wyr-stat-label">By Category</div>
+                  <div className="wyr-category-stats">
+                    {Object.entries(categoryStats).map(([cat, count]) => {
+                      const catInfo = categories.find(c => c.value === cat);
+                      return (
+                        <div key={cat} className="wyr-category-stat">
+                          <span className="wyr-category-icon">{catInfo?.icon || '📌'}</span>
+                          <span className="wyr-category-name">{catInfo?.label || cat}</span>
+                          <span className="wyr-category-count">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="section">
           <div className="section-title">Choose Category</div>
@@ -114,8 +181,10 @@ export default function WouldYouRatherPage() {
                 key={cat.value}
                 className={`category-btn ${selectedCategory === cat.value ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(cat.value)}
+                title={cat.label}
               >
-                {cat.label}
+                <span className="category-icon">{cat.icon}</span>
+                <span className="category-text">{cat.label}</span>
               </button>
             ))}
           </div>
@@ -161,9 +230,16 @@ export default function WouldYouRatherPage() {
         )}
 
         {currentQuestion && (
-          <div className="wyr-card show">
+          <div className={`wyr-card show ${isAnimating ? 'animating' : ''}`}>
             <div className="wyr-question-header">
+              <div className="wyr-category-badge-small">
+                {categories.find(c => c.value === currentQuestion.category)?.icon}
+                <span>{categories.find(c => c.value === currentQuestion.category)?.label}</span>
+              </div>
               <h2 className="wyr-title">Would You Rather...</h2>
+              <div className="wyr-difficulty-badge-small">
+                {currentQuestion.difficulty}
+              </div>
             </div>
 
             <div className="wyr-options">
@@ -223,14 +299,35 @@ export default function WouldYouRatherPage() {
             </div>
 
             {selectedOption && (
-              <div className="wyr-discussion-prompt">
+              <div className="wyr-discussion-prompt show">
                 <div className="discussion-icon">💬</div>
                 <h3>Discuss Your Choice</h3>
-                <p>Explain why you chose this option. What makes it better for you? Share your thoughts with your partner!</p>
+                <p className="discussion-text">
+                  {discussionPrompt || "Explain why you chose this option. What makes it better for you? Share your thoughts with your partner!"}
+                </p>
+                <div className="discussion-tips">
+                  <div className="tip-item">💡 Think about the reasons behind your choice</div>
+                  <div className="tip-item">💡 Share personal experiences or examples</div>
+                  <div className="tip-item">💡 Listen to your partner's perspective</div>
+                </div>
               </div>
             )}
 
             <div className="wyr-actions">
+              <button 
+                className="action-btn" 
+                onClick={() => {
+                  setSelectedOption(null);
+                  setIsRevealing(false);
+                  setDiscussionPrompt('');
+                }}
+                disabled={!selectedOption}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 12h18M12 3l9 9-9 9"/>
+                </svg>
+                <span>Reset</span>
+              </button>
               <button className="action-btn primary-action" onClick={handleNextQuestion}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M5 12h14M12 5l7 7-7 7"/>
