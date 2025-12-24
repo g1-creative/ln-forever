@@ -12,6 +12,13 @@ export default function GamesPage() {
   const availableGames = getAvailableGames();
   const comingSoonGames = games.filter(game => !game.available);
 
+  // Debug: Log games to console
+  if (typeof window !== 'undefined') {
+    console.log('Featured games:', featuredGames.map(g => g.id));
+    console.log('Available games:', availableGames.map(g => g.id));
+    console.log('All games:', games.map(g => ({ id: g.id, featured: g.featured, available: g.available })));
+  }
+
   const categories = Array.from(new Set(games.map(game => game.category)));
 
   return (

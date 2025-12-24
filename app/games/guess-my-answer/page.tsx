@@ -9,7 +9,6 @@ import { getSupabaseClient } from '@/lib/supabase/client';
 import {
   createLobby,
   getLobby,
-  joinLobby,
   leaveLobby,
   setReadyStatus,
   updateLobbyStatus,
@@ -19,13 +18,17 @@ import {
   declineLobbyInvitation,
   LobbyWithParticipants,
 } from '@/lib/db/lobbies';
-import { getRandomScenario } from '@/lib/scenarios';
-import { Scenario } from '@/types';
+import { 
+  getRandomQuestions, 
+  categories, 
+  GuessMyAnswerQuestion 
+} from '@/lib/guess-my-answer-questions-new';
 import { getFriends } from '@/lib/db/friends';
 import { CheckCircleIcon, XCircleIcon, PlayIcon } from '@/components/Icons';
 
-type GameState = 'lobby' | 'answering' | 'guessing' | 'revealed' | 'finished';
-type LobbyView = 'create' | 'join' | 'lobby' | 'playing';
+type GamePhase = 'categorySelect' | 'round1' | 'round2' | 'results';
+type QuestionState = 'answering' | 'guessing' | 'revealed';
+type LobbyView = 'create' | 'lobby' | 'playing';
 
 const AVATAR_EMOJIS: Record<string, string> = {
   avatar1: '👤',
@@ -42,70 +45,82 @@ const AVATAR_EMOJIS: Record<string, string> = {
   avatar12: '😌',
 };
 
+interface GameScore {
+  round1Answerer: string;
+  round1Guesser: string;
+  round1Score: number;
+  round2Answerer: string;
+  round2Guesser: string;
+  round2Score: number;
+}
+
 export default function GuessMyAnswerPage() {
   const { user, profile } = useAuth();
   const [lobbyView, setLobbyView] = useState<LobbyView>('create');
   const [currentLobby, setCurrentLobby] = useState<LobbyWithParticipants | null>(null);
-  const [lobbyCode, setLobbyCode] = useState('');
   const [friends, setFriends] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [gameState, setGameState] = useState<GameState>('lobby');
-  const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Game state
+  const [gamePhase, setGamePhase] = useState<GamePhase>('categorySelect');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<GuessMyAnswerQuestion[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [questionState, setQuestionState] = useState<QuestionState>('answering');
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [selectedGuess, setSelectedGuess] = useState<string | null>(null);
-  const [answerOptions, setAnswerOptions] = useState<string[]>([]);
-  const [answererId, setAnswererId] = useState<string | null>(null);
-  const [isAnswerer, setIsAnswerer] = useState(false);
-  const [round, setRound] = useState(1);
+  const [scores, setScores] = useState<GameScore>({
+    round1Answerer: '',
+    round1Guesser: '',
+    round1Score: 0,
+    round2Answerer: '',
+    round2Guesser: '',
+    round2Score: 0,
+  });
+  const [currentRoundScore, setCurrentRoundScore] = useState(0);
+
   const supabase = getSupabaseClient();
   const channelRef = useRef<any>(null);
-  const invitationChannelRef = useRef<any>(null);
-  const previousStatusRef = useRef<string>('waiting');
+  const gameStateChannelRef = useRef<any>(null);
+  const previousStatusRef = useRef(currentLobby?.status || 'waiting');
 
-  const loadInvitations = useCallback(async () => {
-    try {
-      const invs = await getLobbyInvitations();
-      setInvitations(invs);
-    } catch (error) {
-      console.error('Error loading invitations:', error);
-    }
-  }, []);
-
+  // Load friends
   const loadFriends = useCallback(async () => {
+    if (!user) return;
     try {
       const friendsList = await getFriends();
       setFriends(friendsList);
-    } catch (error) {
-      console.error('Error loading friends:', error);
+    } catch (err) {
+      console.error('Failed to load friends:', err);
     }
-  }, []);
+  }, [user]);
+
+  // Load invitations
+  const loadInvitations = useCallback(async () => {
+    if (!user) return;
+    try {
+      const invitationsList = await getLobbyInvitations();
+      setInvitations(invitationsList);
+    } catch (err) {
+      console.error('Failed to load invitations:', err);
+    }
+  }, [user]);
 
   // Load friends and invitations on mount
   useEffect(() => {
-    if (user) {
-      loadFriends();
-      loadInvitations();
-    }
-  }, [user, loadFriends, loadInvitations]);
+    loadFriends();
+    loadInvitations();
+  }, [loadFriends, loadInvitations]);
 
-  // Set up real-time subscription for invitations
+  // Real-time subscription for invitations
   useEffect(() => {
-    if (!user || !supabase) return;
+    if (!supabase || !user) return;
 
-    // Clean up existing subscription
-    if (invitationChannelRef.current) {
-      invitationChannelRef.current.unsubscribe();
-      invitationChannelRef.current = null;
-    }
-
-    // Subscribe to invitation changes
-    invitationChannelRef.current = supabase
-      .channel(`user_invitations_${user.id}`, {
-        config: {
-          broadcast: { self: true },
-        },
-      })
+    const invitationsChannel = supabase
+      .channel(`invitations-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -114,159 +129,36 @@ export default function GuessMyAnswerPage() {
           table: 'lobby_invitations',
           filter: `invitee_id=eq.${user.id}`,
         },
-        (payload: any) => {
-          console.log('Invitation change detected:', payload);
-          // Small delay to ensure database is updated
-          setTimeout(() => {
-            loadInvitations();
-          }, 100);
+        () => {
+          loadInvitations();
         }
       )
-      .subscribe((status: string) => {
-        console.log('Invitation channel status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to invitations');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Error subscribing to invitations - using polling fallback');
-        }
-      });
-
-    // Fallback polling every 5 seconds as backup
-    const pollInterval = setInterval(() => {
-      loadInvitations();
-    }, 5000);
+      .subscribe();
 
     return () => {
-      if (invitationChannelRef.current) {
-        invitationChannelRef.current.unsubscribe();
-        invitationChannelRef.current = null;
-      }
-      clearInterval(pollInterval);
+      invitationsChannel.unsubscribe();
     };
-  }, [user, supabase, loadInvitations]);
+  }, [supabase, user, loadInvitations]);
 
-
-  const handleAcceptInvitation = async (invitationId: string) => {
-    try {
-      const inv = invitations.find(i => i.id === invitationId);
-      if (!inv) {
-        alert('Invitation not found');
-        return;
-      }
-
-      await acceptLobbyInvitation(invitationId);
-      
-      // Reload invitations to remove the accepted one
-      await loadInvitations();
-      
-      // Load the lobby and switch to lobby view
-      const lobby = await getLobby(inv.lobby_id);
-      if (lobby) {
-        setCurrentLobby(lobby);
-        setLobbyView('lobby');
-      } else {
-        alert('Could not load lobby after accepting invitation');
-      }
-    } catch (error: any) {
-      alert(error.message || 'Error accepting invitation');
-      // Reload invitations in case of error
-      await loadInvitations();
-    }
-  };
-
-  const handleDeclineInvitation = async (invitationId: string) => {
-    try {
-      await declineLobbyInvitation(invitationId);
-      await loadInvitations();
-    } catch (error: any) {
-      alert(error.message || 'Error declining invitation');
-    }
-  };
-
-  const handleInviteFriend = async (friendId: string) => {
-    if (!currentLobby) return;
-    try {
-      await inviteFriendToLobby(currentLobby.id, friendId);
-      alert('Invitation sent!');
-      setShowInviteModal(false);
-      // Refresh lobby to show updated state
-      const updated = await getLobby(currentLobby.id);
-      if (updated) {
-        setCurrentLobby(updated);
-      }
-    } catch (error: any) {
-      alert(error.message || 'Error inviting friend');
-    }
-  };
-
-  // Set up real-time subscription for lobby changes
+  // Lobby subscription
   useEffect(() => {
     if (!supabase || !currentLobby) return;
-    
-    // Initialize previous status
+
     previousStatusRef.current = currentLobby.status;
-    
-    // If lobby is already playing, check if game state exists
-    if (currentLobby.status === 'playing') {
-      if (lobbyView === 'lobby') {
-        console.log('Lobby is already playing, starting game...');
-        startGame(currentLobby);
-      } else if (lobbyView === 'playing') {
-        // Load existing game state
-        (async () => {
-          try {
-            const { data: gameStateData } = await (supabase
-              .from('guess_my_answer_state') as any)
-              .select('game_data')
-              .eq('lobby_id', currentLobby.id)
-              .single();
-            
-            if (gameStateData?.game_data) {
-              const gameData = gameStateData.game_data;
-              if (gameData.gameState) setGameState(gameData.gameState);
-              if (gameData.scenario) setCurrentScenario(gameData.scenario);
-              if (gameData.answerOptions) setAnswerOptions(gameData.answerOptions);
-              if (gameData.answererId) {
-                setAnswererId(gameData.answererId);
-                setIsAnswerer(gameData.answererId === user?.id);
-              }
-              if (gameData.round) setRound(gameData.round);
-            }
-          } catch (error) {
-            console.error('Error loading game state:', error);
-          }
-        })();
-      }
+
+    // If lobby is already playing, load game state
+    if (currentLobby.status === 'playing' && lobbyView === 'lobby') {
+      console.log('Lobby is already playing, loading game state...');
+      loadGameState();
     }
 
     // Clean up existing subscription
     if (channelRef.current) {
       channelRef.current.unsubscribe();
-      channelRef.current = null;
     }
 
-    const refreshLobby = async () => {
-      const updated = await getLobby(currentLobby.id);
-      if (updated) {
-        const previousStatus = previousStatusRef.current;
-        previousStatusRef.current = updated.status;
-        setCurrentLobby(updated);
-        
-        // If lobby status changed to playing, start the game
-        if (updated.status === 'playing' && previousStatus === 'waiting' && lobbyView === 'lobby') {
-          console.log('Game started! Starting game for all players...');
-          await startGame(updated);
-        }
-      }
-    };
-
-    // Subscribe to lobby participant changes
-    channelRef.current = supabase
-      .channel(`lobby:${currentLobby.id}`, {
-        config: {
-          broadcast: { self: true },
-        },
-      })
+    const channel = supabase
+      .channel(`lobby-${currentLobby.id}`)
       .on(
         'postgres_changes',
         {
@@ -275,76 +167,8 @@ export default function GuessMyAnswerPage() {
           table: 'lobby_participants',
           filter: `lobby_id=eq.${currentLobby.id}`,
         },
-        async (payload: any) => {
-          console.log('Participant change detected:', payload);
-          // Small delay to ensure database is updated
-          setTimeout(() => {
-            refreshLobby();
-          }, 100);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'guess_my_answer_state',
-          filter: `lobby_id=eq.${currentLobby.id}`,
-        },
-        async (payload: any) => {
-          console.log('Game state change detected:', payload);
-          const gameData = payload.new?.game_data || payload.record?.game_data;
-          if (gameData) {
-            // Update game state from database
-            if (gameData.gameState && gameData.gameState !== gameState) {
-              setGameState(gameData.gameState);
-            }
-            // Update other game data if needed
-            if (gameData.scenario && !currentScenario) {
-              setCurrentScenario(gameData.scenario);
-            }
-            if (gameData.answerOptions && answerOptions.length === 0) {
-              setAnswerOptions(gameData.answerOptions);
-            }
-            if (gameData.answererId && gameData.answererId !== answererId) {
-              setAnswererId(gameData.answererId);
-              setIsAnswerer(gameData.answererId === user?.id);
-            }
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'guess_my_answer_state',
-          filter: `lobby_id=eq.${currentLobby.id}`,
-        },
-        async (payload: any) => {
-          console.log('Game state change detected:', payload);
-          const gameData = payload.new?.game_data || payload.record?.game_data;
-          if (gameData) {
-            // Update game state from database
-            if (gameData.gameState && gameData.gameState !== gameState) {
-              console.log('Updating game state to:', gameData.gameState);
-              setGameState(gameData.gameState);
-            }
-            // Update other game data if needed
-            if (gameData.scenario && !currentScenario) {
-              setCurrentScenario(gameData.scenario);
-            }
-            if (gameData.answerOptions && answerOptions.length === 0) {
-              setAnswerOptions(gameData.answerOptions);
-            }
-            if (gameData.answererId && gameData.answererId !== answererId) {
-              setAnswererId(gameData.answererId);
-              setIsAnswerer(gameData.answererId === user?.id);
-            }
-            if (gameData.selectedAnswer && !selectedAnswer) {
-              setSelectedAnswer(gameData.selectedAnswer);
-            }
-          }
+        () => {
+          refreshLobby();
         }
       )
       .on(
@@ -357,603 +181,978 @@ export default function GuessMyAnswerPage() {
         },
         async (payload: any) => {
           console.log('Lobby change detected:', payload);
-          // Check if status changed in the payload
-          const newStatus = payload.new?.status || payload.record?.status;
-          const oldStatus = payload.old?.status || previousStatusRef.current;
-          
           setTimeout(async () => {
             const updated = await getLobby(currentLobby.id);
             if (updated) {
               const previousStatus = previousStatusRef.current;
               previousStatusRef.current = updated.status;
               setCurrentLobby(updated);
-              
-              // If lobby status changed to playing, start the game
-              if (updated.status === 'playing' && (previousStatus === 'waiting' || oldStatus === 'waiting') && lobbyView === 'lobby') {
-                console.log('Game started! Starting game for all players...');
-                await startGame(updated);
+
+              // If lobby status changed to playing, load game state
+              if (updated.status === 'playing' && previousStatus === 'waiting' && lobbyView === 'lobby') {
+                console.log('Game started! Loading game state...');
+                await loadGameState();
               }
             }
-          }, 200);
+          }, 100);
         }
       )
-      .subscribe((status: string) => {
-        console.log('Lobby channel status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to lobby changes');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Error subscribing to lobby changes');
-        }
-      });
+      .subscribe();
 
-    // Fallback polling every 1 second as backup (more frequent for game start detection)
+    channelRef.current = channel;
+
+    return () => {
+      channel.unsubscribe();
+      channelRef.current = null;
+    };
+  }, [currentLobby, supabase, lobbyView]);
+
+  // Game state subscription
+  useEffect(() => {
+    if (!supabase || !currentLobby || lobbyView !== 'playing') return;
+
+    if (gameStateChannelRef.current) {
+      gameStateChannelRef.current.unsubscribe();
+    }
+
+    const gameStateChannel = supabase
+      .channel(`game-state-${currentLobby.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'guess_my_answer_state',
+          filter: `lobby_id=eq.${currentLobby.id}`,
+        },
+        async () => {
+          console.log('Game state changed, reloading...');
+          await loadGameState();
+        }
+      )
+      .subscribe();
+
+    gameStateChannelRef.current = gameStateChannel;
+
+    // Polling fallback
     const pollInterval = setInterval(() => {
-      refreshLobby();
+      loadGameState();
     }, 1000);
 
     return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-      }
+      gameStateChannel.unsubscribe();
+      gameStateChannelRef.current = null;
       clearInterval(pollInterval);
     };
-  }, [supabase, currentLobby?.id]);
+  }, [currentLobby, supabase, lobbyView]);
 
-  const handleCreateLobby = async () => {
+  const loadGameState = async () => {
+    if (!currentLobby || !user) return;
+
     try {
-      const lobby = await createLobby('guess_my_answer', 2);
-      const fullLobby = await getLobby(lobby.id);
-      if (fullLobby) {
-        setCurrentLobby(fullLobby);
-        setLobbyView('lobby');
-        setLobbyCode(lobby.id);
+      const { data: gameStateData } = await (supabase
+        .from('guess_my_answer_state') as any)
+        .select('game_data, current_turn_user_id')
+        .eq('lobby_id', currentLobby.id)
+        .single();
+
+      if (gameStateData?.game_data) {
+        const gameData = gameStateData.game_data;
+        
+        if (gameData.selectedCategory) setSelectedCategory(gameData.selectedCategory);
+        if (gameData.questions) setQuestions(gameData.questions);
+        if (gameData.gamePhase) setGamePhase(gameData.gamePhase);
+        if (gameData.currentQuestionIndex !== undefined) setCurrentQuestionIndex(gameData.currentQuestionIndex);
+        if (gameData.questionState) setQuestionState(gameData.questionState);
+        if (gameData.selectedAnswer) setSelectedAnswer(gameData.selectedAnswer);
+        if (gameData.currentRoundScore !== undefined) setCurrentRoundScore(gameData.currentRoundScore);
+        if (gameData.scores) setScores(gameData.scores);
+        
+        // If we're in playing view but haven't transitioned yet, do it now
+        if (lobbyView !== 'playing') {
+          setLobbyView('playing');
+        }
       }
-    } catch (error: any) {
-      alert(error.message || 'Error creating lobby');
+    } catch (error) {
+      console.error('Error loading game state:', error);
     }
   };
 
-  const handleJoinLobby = async () => {
-    if (!lobbyCode.trim()) {
-      alert('Please enter a lobby code');
-      return;
-    }
-
+  const refreshLobby = async () => {
+    if (!currentLobby) return;
     try {
-      await joinLobby(lobbyCode);
-      const lobby = await getLobby(lobbyCode);
-      if (lobby) {
-        setCurrentLobby(lobby);
-        setLobbyView('lobby');
-      } else {
-        alert('Lobby not found');
+      const updated = await getLobby(currentLobby.id);
+      if (updated) {
+        setCurrentLobby(updated);
       }
-    } catch (error: any) {
-      alert(error.message || 'Error joining lobby');
+    } catch (err) {
+      console.error('Failed to refresh lobby:', err);
+    }
+  };
+
+  const handleCreateLobby = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const lobby = await createLobby('guess-my-answer', 2);
+      setCurrentLobby(lobby);
+      setLobbyView('lobby');
+    } catch (err: any) {
+      setError(err.message || 'Failed to create lobby');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleLeaveLobby = async () => {
     if (!currentLobby) return;
-
+    setLoading(true);
     try {
       await leaveLobby(currentLobby.id);
       setCurrentLobby(null);
       setLobbyView('create');
-      setLobbyCode('');
-      setGameState('lobby');
-    } catch (error: any) {
-      alert(error.message || 'Error leaving lobby');
+      setGamePhase('categorySelect');
+      setSelectedCategory(null);
+      setQuestions([]);
+      setCurrentQuestionIndex(0);
+      setQuestionState('answering');
+      setSelectedAnswer(null);
+      setSelectedGuess(null);
+      setCurrentRoundScore(0);
+    } catch (err: any) {
+      setError(err.message || 'Failed to leave lobby');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleToggleReady = async () => {
-    if (!currentLobby) return;
+    if (!currentLobby || !user) return;
+    const currentParticipant = currentLobby.participants.find(p => p.user_id === user.id);
+    if (!currentParticipant) return;
 
-    const participant = currentLobby.participants.find(p => p.user_id === user?.id);
-    const newReadyStatus = !participant?.is_ready;
-
+    setLoading(true);
     try {
-      await setReadyStatus(currentLobby.id, newReadyStatus);
-      const updated = await getLobby(currentLobby.id);
-      if (updated) setCurrentLobby(updated);
-    } catch (error: any) {
-      alert(error.message || 'Error updating ready status');
+      await setReadyStatus(currentLobby.id, !currentParticipant.is_ready);
+      await refreshLobby();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update ready status');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const generateAnswerOptions = (scenario: Scenario, answererRole: 'roleA' | 'roleB'): string[] => {
-    // Generate 4 multiple choice options based on the scenario
-    const role = answererRole === 'roleA' ? scenario.roleA : scenario.roleB;
-    const hints = scenario.hints || [];
-    
-    // Create options based on scenario context
-    const options = [
-      `Follow the scenario exactly as described`,
-      `Add a creative twist to the scenario`,
-      `Focus on being helpful and supportive`,
-      `Make it fun and lighthearted`,
-    ];
-    
-    return options;
+  const handleInviteFriend = async (friendId: string) => {
+    if (!currentLobby) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await inviteFriendToLobby(currentLobby.id, friendId);
+      setShowInviteModal(false);
+      await refreshLobby();
+    } catch (err: any) {
+      setError(err.message || 'Failed to invite friend');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const startGame = async (lobby: LobbyWithParticipants) => {
-    if (lobby.participants.length < 2) return;
+  const handleAcceptInvitation = async (invitationId: string, lobbyId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await acceptLobbyInvitation(invitationId);
+      await loadInvitations();
+      const lobby = await getLobby(lobbyId);
+      if (lobby) {
+        setCurrentLobby(lobby);
+        setLobbyView('lobby');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to accept invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Determine who answers first (alternate each round)
-    const answererIndex = (round - 1) % lobby.participants.length;
-    const answerer = lobby.participants[answererIndex];
-    const guesser = lobby.participants[1 - answererIndex];
+  const handleDeclineInvitation = async (invitationId: string) => {
+    setLoading(true);
+    try {
+      await declineLobbyInvitation(invitationId);
+      await loadInvitations();
+    } catch (err: any) {
+      setError(err.message || 'Failed to decline invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setAnswererId(answerer.user_id);
-    setIsAnswerer(answerer.user_id === user?.id);
+  const handleStartGame = async () => {
+    if (!currentLobby || !user) return;
+    if (currentLobby.host_id !== user.id) return;
+    if (currentLobby.participants.length !== 2) return;
+    if (!currentLobby.participants.every(p => p.is_ready)) return;
 
-    // Get a random scenario
-    const scenario = getRandomScenario('medium', 'all');
-    if (scenario) {
-      setCurrentScenario(scenario);
-      const answererRole = answererIndex === 0 ? 'roleA' : 'roleB';
-      const options = generateAnswerOptions(scenario, answererRole);
-      setAnswerOptions(options);
-      setSelectedAnswer(null);
-      setSelectedGuess(null);
-      setGameState('answering');
-      setLobbyView('playing');
+    setLoading(true);
+    try {
+      await updateLobbyStatus(currentLobby.id, 'playing');
+      const updated = await getLobby(currentLobby.id);
+      if (updated) {
+        setCurrentLobby(updated);
+        setLobbyView('playing');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to start game');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategorySelect = async (categoryId: string) => {
+    if (!currentLobby || !user) return;
+    // Only host can select category
+    if (currentLobby.host_id !== user.id) return;
+
+    setLoading(true);
+    try {
+      const selectedQuestions = getRandomQuestions(categoryId, 10);
+      setSelectedCategory(categoryId);
+      setQuestions(selectedQuestions);
+      
+      // Determine who goes first (host is answerer in round 1)
+      const round1Answerer = user.id;
+      const round1Guesser = currentLobby.participants.find(p => p.user_id !== user.id)?.user_id || '';
+
+      setGamePhase('round1');
+      setCurrentQuestionIndex(0);
+      setQuestionState('answering');
+      setScores({
+        round1Answerer: round1Answerer,
+        round1Guesser: round1Guesser,
+        round1Score: 0,
+        round2Answerer: round1Guesser,
+        round2Guesser: round1Answerer,
+        round2Score: 0,
+      });
+
+      // Store game state in DB
+      await supabase.from('guess_my_answer_state').upsert({
+        lobby_id: currentLobby.id,
+        current_turn_user_id: round1Answerer,
+        game_data: {
+          selectedCategory: categoryId,
+          questions: selectedQuestions,
+          gamePhase: 'round1',
+          currentQuestionIndex: 0,
+          questionState: 'answering',
+          selectedAnswer: null,
+          currentRoundScore: 0,
+          scores: {
+            round1Answerer: round1Answerer,
+            round1Guesser: round1Guesser,
+            round1Score: 0,
+            round2Answerer: round1Guesser,
+            round2Guesser: round1Answerer,
+            round2Score: 0,
+          },
+        },
+      }, { onConflict: 'lobby_id' });
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to select category');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedAnswer || !currentLobby || !currentScenario || !user) return;
+    if (!selectedAnswer || !currentLobby || !user) return;
 
+    setLoading(true);
     try {
-      // Store answer in database
-      const { error } = await (supabase
-        .from('guess_my_answer_state') as any)
-        .upsert({
-          lobby_id: currentLobby.id,
-          game_data: {
-            gameState: 'guessing',
-            round: round,
-            answererId: answererId,
-            selectedAnswer: selectedAnswer,
-            scenario: currentScenario,
-            answerOptions: answerOptions,
-          },
-          current_turn_user_id: answererId,
-        }, {
-          onConflict: 'lobby_id'
-        });
+      const currentAnswerer = gamePhase === 'round1' ? scores.round1Answerer : scores.round2Answerer;
+      const currentGuesser = gamePhase === 'round1' ? scores.round1Guesser : scores.round2Guesser;
 
-      if (error) throw error;
-      
-      // Update local state
-      setGameState('guessing');
-    } catch (error: any) {
-      console.error('Error submitting answer:', error);
-      // Still update local state as fallback
-      setGameState('guessing');
+      await supabase.from('guess_my_answer_state').update({
+        current_turn_user_id: currentGuesser,
+        game_data: {
+          selectedCategory,
+          questions,
+          gamePhase,
+          currentQuestionIndex,
+          questionState: 'guessing',
+          selectedAnswer: selectedAnswer,
+          currentRoundScore,
+          scores,
+        },
+      }).eq('lobby_id', currentLobby.id);
+
+      setQuestionState('guessing');
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit answer');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmitGuess = async () => {
     if (!selectedGuess || !currentLobby || !user) return;
 
+    setLoading(true);
     try {
-      // Store guess in database
-      const { data: currentState } = await (supabase
-        .from('guess_my_answer_state') as any)
-        .select('game_data')
-        .eq('lobby_id', currentLobby.id)
-        .single();
+      const isCorrect = selectedGuess === selectedAnswer;
+      const newScore = isCorrect ? currentRoundScore + 1 : currentRoundScore;
 
-      const gameData = currentState?.game_data || {};
+      await supabase.from('guess_my_answer_state').update({
+        current_turn_user_id: null,
+        game_data: {
+          selectedCategory,
+          questions,
+          gamePhase,
+          currentQuestionIndex,
+          questionState: 'revealed',
+          selectedAnswer,
+          selectedGuess,
+          currentRoundScore: newScore,
+          scores,
+        },
+      }).eq('lobby_id', currentLobby.id);
+
+      setCurrentRoundScore(newScore);
+      setQuestionState('revealed');
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit guess');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNextQuestion = async () => {
+    if (!currentLobby || !user) return;
+
+    setLoading(true);
+    try {
+      const nextIndex = currentQuestionIndex + 1;
       
-      const { error } = await (supabase
-        .from('guess_my_answer_state') as any)
-        .upsert({
-          lobby_id: currentLobby.id,
+      if (nextIndex >= questions.length) {
+        // Round finished
+        if (gamePhase === 'round1') {
+          // Update round 1 score and move to round 2
+          const updatedScores = { ...scores, round1Score: currentRoundScore };
+          
+          await supabase.from('guess_my_answer_state').update({
+            current_turn_user_id: scores.round2Answerer,
+            game_data: {
+              selectedCategory,
+              questions,
+              gamePhase: 'round2',
+              currentQuestionIndex: 0,
+              questionState: 'answering',
+              selectedAnswer: null,
+              selectedGuess: null,
+              currentRoundScore: 0,
+              scores: updatedScores,
+            },
+          }).eq('lobby_id', currentLobby.id);
+
+          setScores(updatedScores);
+          setGamePhase('round2');
+          setCurrentQuestionIndex(0);
+          setCurrentRoundScore(0);
+        } else {
+          // Round 2 finished, show results
+          const updatedScores = { ...scores, round2Score: currentRoundScore };
+          
+          await supabase.from('guess_my_answer_state').update({
+            current_turn_user_id: null,
+            game_data: {
+              selectedCategory,
+              questions,
+              gamePhase: 'results',
+              currentQuestionIndex: 0,
+              questionState: 'answering',
+              selectedAnswer: null,
+              selectedGuess: null,
+              currentRoundScore: 0,
+              scores: updatedScores,
+            },
+          }).eq('lobby_id', currentLobby.id);
+
+          setScores(updatedScores);
+          setGamePhase('results');
+        }
+      } else {
+        // Next question
+        const currentAnswerer = gamePhase === 'round1' ? scores.round1Answerer : scores.round2Answerer;
+        
+        await supabase.from('guess_my_answer_state').update({
+          current_turn_user_id: currentAnswerer,
           game_data: {
-            ...gameData,
-            gameState: 'revealed',
-            selectedGuess: selectedGuess,
+            selectedCategory,
+            questions,
+            gamePhase,
+            currentQuestionIndex: nextIndex,
+            questionState: 'answering',
+            selectedAnswer: null,
+            selectedGuess: null,
+            currentRoundScore,
+            scores,
           },
-        }, {
-          onConflict: 'lobby_id'
-        });
+        }).eq('lobby_id', currentLobby.id);
 
-      if (error) throw error;
-      
-      // Update local state
-      setGameState('revealed');
-    } catch (error: any) {
-      console.error('Error submitting guess:', error);
-      // Still update local state as fallback
-      setGameState('revealed');
+        setCurrentQuestionIndex(nextIndex);
+      }
+
+      setQuestionState('answering');
+      setSelectedAnswer(null);
+      setSelectedGuess(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to proceed');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleNextRound = () => {
-    setRound(prev => prev + 1);
-    setSelectedAnswer(null);
-    setSelectedGuess(null);
-    setGameState('answering');
-    
-    if (currentLobby) {
-      startGame(currentLobby);
+  const handlePlayAgain = async () => {
+    if (!currentLobby || !user) return;
+    if (currentLobby.host_id !== user.id) return;
+
+    setLoading(true);
+    try {
+      // Reset game state
+      await supabase.from('guess_my_answer_state').update({
+        current_turn_user_id: null,
+        game_data: null,
+      }).eq('lobby_id', currentLobby.id);
+
+      // Reset local state
+      setGamePhase('categorySelect');
+      setSelectedCategory(null);
+      setQuestions([]);
+      setCurrentQuestionIndex(0);
+      setQuestionState('answering');
+      setSelectedAnswer(null);
+      setSelectedGuess(null);
+      setCurrentRoundScore(0);
+      setScores({
+        round1Answerer: '',
+        round1Guesser: '',
+        round1Score: 0,
+        round2Answerer: '',
+        round2Guesser: '',
+        round2Score: 0,
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to restart game');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getAvatarEmoji = (avatarId: string | null) => {
-    return AVATAR_EMOJIS[avatarId || 'avatar1'] || '👤';
+  const isHost = currentLobby && user && currentLobby.host_id === user.id;
+  const currentAnswerer = gamePhase === 'round1' ? scores.round1Answerer : scores.round2Answerer;
+  const currentGuesser = gamePhase === 'round1' ? scores.round1Guesser : scores.round2Guesser;
+  const isMyTurnToAnswer = user && currentAnswerer === user.id;
+  const isMyTurnToGuess = user && currentGuesser === user.id;
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const categoryInfo = categories.find(c => c.id === selectedCategory);
+
+  // Calculate winner
+  const getWinner = () => {
+    if (scores.round1Score > scores.round2Score) {
+      return scores.round1Guesser;
+    } else if (scores.round2Score > scores.round1Score) {
+      return scores.round2Guesser;
+    }
+    return 'tie';
   };
 
-  if (!user) {
-    return <ProtectedRoute><div>Loading...</div></ProtectedRoute>;
-  }
+  const getParticipantProfile = (userId: string) => {
+    return currentLobby?.participants.find(p => p.user_id === userId);
+  };
 
   return (
     <ProtectedRoute>
-      <div className="container">
-        <div className="page-header">
-          <Link href="/games" className="back-link">
-            ← Back to Games
-          </Link>
-          <Image
-            src="/images/ln_logo_favicon.png"
-            alt="LN Forever"
-            width={64}
-            height={64}
-            className="page-header-logo"
-          />
-          <h1>Guess My Answer</h1>
-          <p>One answers secretly, the other guesses!</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-red-800 py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <Link href="/games" className="text-white hover:text-pink-300 transition">
+              ← Back to Games
+            </Link>
+            <h1 className="text-4xl font-bold text-white">Guess My Answer</h1>
+            <div className="w-24"></div>
+          </div>
 
-        {/* Pending Invitations */}
-        {invitations.length > 0 && lobbyView === 'create' && (
-          <div className="section" style={{ marginBottom: '1rem', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '8px', padding: '1rem' }}>
-            <h3 className="section-subtitle">Pending Invitations ({invitations.length})</h3>
-            <div className="invitations-list">
-              {invitations.map((invitation) => (
-                <div key={invitation.id} className="invitation-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', marginBottom: '0.5rem', backgroundColor: 'white', borderRadius: '6px' }}>
-                  <div>
-                    <strong>{invitation.inviter?.username || invitation.inviter?.name || 'Someone'}</strong> invited you to a game
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                      className="action-btn primary-action"
-                      onClick={() => handleAcceptInvitation(invitation.id)}
-                      style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
-                    >
-                      Accept
-                    </button>
-                    <button
-                      className="action-btn secondary"
-                      onClick={() => handleDeclineInvitation(invitation.id)}
-                      style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
-                    >
-                      Decline
-                    </button>
+          {error && (
+            <div className="bg-red-500/20 border border-red-500 text-white p-4 rounded-lg mb-4">
+              {error}
+            </div>
+          )}
+
+          {/* Create Lobby View */}
+          {lobbyView === 'create' && (
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 text-white">
+              <h2 className="text-2xl font-bold mb-6 text-center">Get Started</h2>
+              
+              {/* Pending Invitations */}
+              {invitations.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold mb-3">Pending Invitations</h3>
+                  <div className="space-y-2">
+                    {invitations.map((invitation) => (
+                      <div
+                        key={invitation.id}
+                        className="bg-white/10 p-4 rounded-lg flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">
+                            {AVATAR_EMOJIS[invitation.inviter_profile?.avatar_emoji || 'avatar1']}
+                          </span>
+                          <div>
+                            <p className="font-bold">{invitation.inviter_profile?.display_name}</p>
+                            <p className="text-sm text-pink-200">invited you to play</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleAcceptInvitation(invitation.id, invitation.lobby_id)}
+                            disabled={loading}
+                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => handleDeclineInvitation(invitation.id)}
+                            disabled={loading}
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              )}
 
-        {lobbyView === 'create' && (
-          <div className="section">
-            <h2 className="section-title">Create a Game</h2>
-            <div className="lobby-actions">
-              <button className="spin-button" onClick={handleCreateLobby}>
-                <PlayIcon />
-                <span>Create Lobby</span>
+              <button
+                onClick={handleCreateLobby}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-xl transition disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create New Lobby'}
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {lobbyView === 'lobby' && currentLobby && (
-          <div className="section">
-            <div className="lobby-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h2 className="section-title">Lobby</h2>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                {currentLobby.host_id === user?.id && (
+          {/* Lobby View */}
+          {lobbyView === 'lobby' && currentLobby && (
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 text-white">
+              <h2 className="text-2xl font-bold mb-6 text-center">Lobby</h2>
+
+              {/* Participants */}
+              <div className="mb-6">
+                <h3 className="text-xl font-bold mb-3">Players ({currentLobby.participants.length}/{currentLobby.max_players})</h3>
+                <div className="space-y-2">
+                  {currentLobby.participants.map((participant) => (
+                    <div
+                      key={participant.id}
+                      className="bg-white/10 p-4 rounded-lg flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">
+                          {AVATAR_EMOJIS[participant.profiles?.avatar_emoji || 'avatar1']}
+                        </span>
+                        <div>
+                          <p className="font-bold">
+                            {participant.profiles?.display_name}
+                            {participant.user_id === currentLobby.host_id && ' (Host)'}
+                            {participant.user_id === user?.id && ' (You)'}
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        {participant.is_ready ? (
+                          <CheckCircleIcon className="w-6 h-6 text-green-400" />
+                        ) : (
+                          <XCircleIcon className="w-6 h-6 text-red-400" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-3">
+                {isHost && currentLobby.participants.length < currentLobby.max_players && (
                   <button
-                    className="action-btn secondary"
-                    onClick={async () => {
-                      const updated = await getLobby(currentLobby.id);
-                      if (updated) setCurrentLobby(updated);
-                    }}
-                    style={{ padding: '0.5rem 1rem' }}
-                  >
-                    🔄 Refresh
-                  </button>
-                )}
-                {currentLobby.host_id === user?.id && currentLobby.participants.length < currentLobby.max_players && (
-                  <button
-                    className="action-btn primary-action"
                     onClick={() => setShowInviteModal(true)}
-                    style={{ padding: '0.5rem 1rem' }}
+                    className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition"
                   >
                     Invite Friend
                   </button>
                 )}
-              </div>
-            </div>
 
-            <div className="lobby-participants">
-              <h3 className="section-subtitle">Players ({currentLobby.participants.length}/{currentLobby.max_players})</h3>
-              <div className="participants-list">
-                {currentLobby.participants.map((participant) => (
-                  <div key={participant.id} className="participant-item">
-                    <div className="participant-avatar">
-                      {getAvatarEmoji(participant.profile?.avatar_selection || null)}
-                    </div>
-                    <div className="participant-info">
-                      <div className="participant-name">
-                        {participant.profile?.username || participant.profile?.name || 'Player'}
-                        {participant.user_id === currentLobby.host_id && (
-                          <span className="host-badge">Host</span>
-                        )}
-                      </div>
-                      <div className="participant-status">
-                        {participant.is_ready ? (
-                          <span className="ready-status ready">
-                            <CheckCircleIcon /> Ready
-                          </span>
-                        ) : (
-                          <span className="ready-status not-ready">
-                            <XCircleIcon /> Not Ready
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                {isHost && (
+                  <button
+                    onClick={refreshLobby}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-lg transition"
+                  >
+                    Refresh
+                  </button>
+                )}
 
-            <div className="lobby-actions-bar">
-              {currentLobby.participants.length >= currentLobby.max_players && 
-               currentLobby.participants.every(p => p.is_ready) &&
-               currentLobby.host_id === user?.id && (
                 <button
-                  className="action-btn primary-action"
-                  onClick={async () => {
-                    try {
-                      await updateLobbyStatus(currentLobby.id, 'playing');
-                      const updated = await getLobby(currentLobby.id);
-                      if (updated) {
-                        setCurrentLobby(updated);
-                        await startGame(updated);
-                      }
-                    } catch (error: any) {
-                      alert(error.message || 'Error starting game');
-                    }
-                  }}
-                  style={{ marginBottom: '0.5rem', width: '100%', fontSize: '1.1rem', padding: '0.75rem' }}
+                  onClick={handleToggleReady}
+                  disabled={loading}
+                  className={`font-bold py-3 px-6 rounded-lg transition disabled:opacity-50 ${
+                    currentLobby.participants.find(p => p.user_id === user?.id)?.is_ready
+                      ? 'bg-red-500 hover:bg-red-600'
+                      : 'bg-green-500 hover:bg-green-600'
+                  } text-white`}
                 >
-                  🎮 Start Game
+                  {currentLobby.participants.find(p => p.user_id === user?.id)?.is_ready
+                    ? 'Not Ready'
+                    : 'Ready'}
                 </button>
-              )}
-              {currentLobby.participants.length >= currentLobby.max_players && 
-               currentLobby.participants.every(p => p.is_ready) &&
-               currentLobby.host_id !== user?.id && (
-                <div style={{ marginBottom: '0.5rem', padding: '0.75rem', backgroundColor: '#e7f3ff', borderRadius: '6px', textAlign: 'center' }}>
-                  <p style={{ margin: 0, fontWeight: 'bold', color: '#0066cc' }}>
-                    Waiting for host to start the game...
-                  </p>
+
+                {isHost &&
+                  currentLobby.participants.length === 2 &&
+                  currentLobby.participants.every(p => p.is_ready) && (
+                    <button
+                      onClick={handleStartGame}
+                      disabled={loading}
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      <PlayIcon className="w-5 h-5" />
+                      Start Game
+                    </button>
+                  )}
+
+                {!isHost &&
+                  currentLobby.participants.length === 2 &&
+                  currentLobby.participants.every(p => p.is_ready) && (
+                    <div className="bg-yellow-500/20 border border-yellow-500 p-4 rounded-lg text-center">
+                      Waiting for host to start the game...
+                    </div>
+                  )}
+
+                <button
+                  onClick={handleLeaveLobby}
+                  disabled={loading}
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                >
+                  Leave Lobby
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Playing View */}
+          {lobbyView === 'playing' && currentLobby && (
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 text-white">
+              {/* Category Selection */}
+              {gamePhase === 'categorySelect' && (
+                <div>
+                  <h2 className="text-3xl font-bold mb-6 text-center">Choose a Category</h2>
+                  {isHost ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategorySelect(category.id)}
+                          disabled={loading}
+                          className="bg-white/20 hover:bg-white/30 p-6 rounded-xl transition disabled:opacity-50 text-left"
+                        >
+                          <div className="text-5xl mb-3">{category.emoji}</div>
+                          <h3 className="text-2xl font-bold mb-2">{category.name}</h3>
+                          <p className="text-pink-200">{category.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-xl">
+                      Waiting for host to select a category...
+                    </div>
+                  )}
                 </div>
               )}
-              <button
-                className="action-btn primary-action"
-                onClick={handleToggleReady}
-                disabled={currentLobby.participants.length < currentLobby.max_players}
-              >
-                {currentLobby.participants.find(p => p.user_id === user?.id)?.is_ready
-                  ? 'Not Ready'
-                  : 'Ready'}
-              </button>
-              <button className="action-btn secondary" onClick={handleLeaveLobby}>
-                Leave Lobby
-              </button>
-            </div>
 
-            {currentLobby.participants.length < currentLobby.max_players && (
-              <div className="lobby-waiting">
-                <p>Waiting for another player to join...</p>
-                {currentLobby.host_id === user?.id && (
-                  <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
-                    Click "Invite Friend" to invite someone from your friends list
-                  </p>
-                )}
-              </div>
-            )}
+              {/* Playing Round */}
+              {(gamePhase === 'round1' || gamePhase === 'round2') && currentQuestion && (
+                <div>
+                  {/* Header */}
+                  <div className="mb-6 text-center">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-lg">
+                        {categoryInfo?.emoji} {categoryInfo?.name}
+                      </div>
+                      <div className="text-lg font-bold">
+                        {gamePhase === 'round1' ? 'Round 1' : 'Round 2'}
+                      </div>
+                      <div className="text-lg">
+                        Question {currentQuestionIndex + 1}/10
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold">
+                      Score: {currentRoundScore}/10
+                    </div>
+                  </div>
 
-            {/* Invite Friend Modal */}
-            {showInviteModal && (
-              <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                <div className="modal-content" style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', maxWidth: '500px', width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
-                  <h3 style={{ marginBottom: '1rem' }}>Invite a Friend</h3>
-                  <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    {friends.length === 0 ? (
-                      <p>No friends to invite. Add friends from your profile!</p>
-                    ) : (
-                      friends
-                        .filter(friend => !currentLobby.participants.some(p => p.user_id === friend.friend_id))
-                        .map((friend) => (
-                          <div key={friend.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', marginBottom: '0.5rem', border: '1px solid #ddd', borderRadius: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                              <div style={{ fontSize: '2rem' }}>
-                                {getAvatarEmoji(friend.avatar_selection || null)}
-                              </div>
-                              <div>
-                                <div style={{ fontWeight: 'bold' }}>{friend.username || friend.name || 'Friend'}</div>
-                              </div>
+                  {/* Question */}
+                  <div className="bg-white/20 p-6 rounded-xl mb-6">
+                    <h3 className="text-2xl font-bold mb-4 text-center">{currentQuestion.question}</h3>
+
+                    {/* Answering Phase */}
+                    {questionState === 'answering' && (
+                      <div>
+                        {isMyTurnToAnswer ? (
+                          <div>
+                            <p className="text-center mb-4 text-pink-200">Select your answer:</p>
+                            <div className="grid grid-cols-1 gap-3">
+                              {currentQuestion.options.map((option, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => setSelectedAnswer(option)}
+                                  className={`p-4 rounded-lg text-left transition ${
+                                    selectedAnswer === option
+                                      ? 'bg-pink-500 text-white'
+                                      : 'bg-white/10 hover:bg-white/20'
+                                  }`}
+                                >
+                                  {option}
+                                </button>
+                              ))}
                             </div>
-                            <button
-                              className="action-btn primary-action"
-                              onClick={() => handleInviteFriend(friend.friend_id)}
-                              style={{ padding: '0.5rem 1rem' }}
-                            >
-                              Invite
-                            </button>
+                            {selectedAnswer && (
+                              <button
+                                onClick={handleSubmitAnswer}
+                                disabled={loading}
+                                className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                              >
+                                Submit Answer
+                              </button>
+                            )}
                           </div>
-                        ))
+                        ) : (
+                          <div className="text-center text-xl">
+                            Waiting for {getParticipantProfile(currentAnswerer)?.profiles?.display_name} to answer...
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Guessing Phase */}
+                    {questionState === 'guessing' && (
+                      <div>
+                        {isMyTurnToGuess ? (
+                          <div>
+                            <p className="text-center mb-4 text-pink-200">Guess their answer:</p>
+                            <div className="grid grid-cols-1 gap-3">
+                              {currentQuestion.options.map((option, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => setSelectedGuess(option)}
+                                  className={`p-4 rounded-lg text-left transition ${
+                                    selectedGuess === option
+                                      ? 'bg-purple-500 text-white'
+                                      : 'bg-white/10 hover:bg-white/20'
+                                  }`}
+                                >
+                                  {option}
+                                </button>
+                              ))}
+                            </div>
+                            {selectedGuess && (
+                              <button
+                                onClick={handleSubmitGuess}
+                                disabled={loading}
+                                className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                              >
+                                Submit Guess
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-center text-xl">
+                            Waiting for {getParticipantProfile(currentGuesser)?.profiles?.display_name} to guess...
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Revealed Phase */}
+                    {questionState === 'revealed' && (
+                      <div>
+                        <div className="grid grid-cols-1 gap-3 mb-4">
+                          {currentQuestion.options.map((option, index) => {
+                            const isCorrectAnswer = option === selectedAnswer;
+                            const wasGuessed = option === selectedGuess;
+                            const isCorrectGuess = selectedAnswer === selectedGuess && isCorrectAnswer;
+
+                            return (
+                              <div
+                                key={index}
+                                className={`p-4 rounded-lg ${
+                                  isCorrectAnswer && isCorrectGuess
+                                    ? 'bg-green-500 text-white'
+                                    : isCorrectAnswer
+                                    ? 'bg-blue-500 text-white'
+                                    : wasGuessed
+                                    ? 'bg-red-500 text-white'
+                                    : 'bg-white/10'
+                                }`}
+                              >
+                                {option}
+                                {isCorrectAnswer && ' ✓ (Correct Answer)'}
+                                {wasGuessed && !isCorrectGuess && ' ✗ (Your Guess)'}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="text-center mb-4">
+                          {selectedAnswer === selectedGuess ? (
+                            <p className="text-2xl font-bold text-green-400">Correct! 🎉</p>
+                          ) : (
+                            <p className="text-2xl font-bold text-red-400">Incorrect 😞</p>
+                          )}
+                        </div>
+
+                        {isHost && (
+                          <button
+                            onClick={handleNextQuestion}
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                          >
+                            {currentQuestionIndex + 1 >= questions.length
+                              ? gamePhase === 'round1'
+                                ? 'Start Round 2'
+                                : 'See Results'
+                              : 'Next Question'}
+                          </button>
+                        )}
+
+                        {!isHost && (
+                          <div className="text-center text-pink-200">
+                            Waiting for host to continue...
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <button
-                    className="action-btn secondary"
-                    onClick={() => setShowInviteModal(false)}
-                    style={{ marginTop: '1rem', width: '100%' }}
-                  >
-                    Close
-                  </button>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
 
-        {lobbyView === 'playing' && (
-          <div className="section">
-            {gameState === 'answering' && isAnswerer && currentScenario && (
-              <div className="game-phase">
-                <h2 className="section-title">Round {round}</h2>
-                <div className="question-card">
-                  <h3>{currentScenario.title}</h3>
-                  <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-                    <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Your Role:</p>
-                    <p>{currentScenario.roleA}</p>
+              {/* Results */}
+              {gamePhase === 'results' && (
+                <div className="text-center">
+                  <h2 className="text-4xl font-bold mb-8">Game Over!</h2>
+
+                  <div className="bg-white/20 p-6 rounded-xl mb-6">
+                    <h3 className="text-2xl font-bold mb-4">Final Scores</h3>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-white/10 p-4 rounded-lg">
+                        <div className="text-3xl mb-2">
+                          {AVATAR_EMOJIS[getParticipantProfile(scores.round1Guesser)?.profiles?.avatar_emoji || 'avatar1']}
+                        </div>
+                        <p className="font-bold">
+                          {getParticipantProfile(scores.round1Guesser)?.profiles?.display_name}
+                        </p>
+                        <p className="text-3xl font-bold text-green-400">
+                          {scores.round1Score}/10
+                        </p>
+                      </div>
+
+                      <div className="bg-white/10 p-4 rounded-lg">
+                        <div className="text-3xl mb-2">
+                          {AVATAR_EMOJIS[getParticipantProfile(scores.round2Guesser)?.profiles?.avatar_emoji || 'avatar1']}
+                        </div>
+                        <p className="font-bold">
+                          {getParticipantProfile(scores.round2Guesser)?.profiles?.display_name}
+                        </p>
+                        <p className="text-3xl font-bold text-green-400">
+                          {scores.round2Score}/10
+                        </p>
+                      </div>
+                    </div>
+
+                    {getWinner() === 'tie' ? (
+                      <p className="text-3xl font-bold text-yellow-400">It's a Tie! 🤝</p>
+                    ) : (
+                      <p className="text-3xl font-bold text-green-400">
+                        {getParticipantProfile(getWinner())?.profiles?.display_name} Wins! 🏆
+                      </p>
+                    )}
                   </div>
-                  <p className="question-instruction" style={{ marginBottom: '1rem', fontWeight: 'bold' }}>
-                    What would you do in this scenario?
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {answerOptions.map((option, index) => (
+
+                  <div className="flex flex-col gap-3">
+                    {isHost && (
                       <button
-                        key={index}
-                        className={`action-btn ${selectedAnswer === option ? 'primary-action' : 'secondary'}`}
-                        onClick={() => setSelectedAnswer(option)}
-                        style={{
-                          textAlign: 'left',
-                          padding: '1rem',
-                          border: selectedAnswer === option ? '2px solid #0066cc' : '1px solid #ddd',
-                        }}
+                        onClick={handlePlayAgain}
+                        disabled={loading}
+                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition disabled:opacity-50"
                       >
-                        {String.fromCharCode(65 + index)}. {option}
+                        Play Again (Choose New Category)
                       </button>
-                    ))}
-                  </div>
-                  <button
-                    className="action-btn primary-action"
-                    onClick={handleSubmitAnswer}
-                    disabled={!selectedAnswer}
-                    style={{ marginTop: '1rem', width: '100%' }}
-                  >
-                    Submit Answer
-                  </button>
-                </div>
-              </div>
-            )}
+                    )}
 
-            {gameState === 'answering' && !isAnswerer && currentScenario && (
-              <div className="game-phase">
-                <h2 className="section-title">Round {round}</h2>
-                <div className="waiting-card">
-                  <p>Waiting for your partner to answer...</p>
-                  <div className="question-preview" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-                    <h3>{currentScenario.title}</h3>
-                    <p style={{ marginTop: '0.5rem' }}>{currentScenario.roleB}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {gameState === 'guessing' && !isAnswerer && currentScenario && (
-              <div className="game-phase">
-                <h2 className="section-title">Round {round}</h2>
-                <div className="question-card">
-                  <h3>{currentScenario.title}</h3>
-                  <div style={{ marginBottom: '1rem', padding: '1rem', backgroundColor: '#f5f5f5', borderRadius: '6px' }}>
-                    <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Your Partner's Role:</p>
-                    <p>{currentScenario.roleA}</p>
-                  </div>
-                  <p className="question-instruction" style={{ marginBottom: '1rem', fontWeight: 'bold' }}>
-                    Guess what your partner chose:
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {answerOptions.map((option, index) => (
-                      <button
-                        key={index}
-                        className={`action-btn ${selectedGuess === option ? 'primary-action' : 'secondary'}`}
-                        onClick={() => setSelectedGuess(option)}
-                        style={{
-                          textAlign: 'left',
-                          padding: '1rem',
-                          border: selectedGuess === option ? '2px solid #0066cc' : '1px solid #ddd',
-                        }}
-                      >
-                        {String.fromCharCode(65 + index)}. {option}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    className="action-btn primary-action"
-                    onClick={handleSubmitGuess}
-                    disabled={!selectedGuess}
-                    style={{ marginTop: '1rem', width: '100%' }}
-                  >
-                    Submit Guess
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {gameState === 'guessing' && isAnswerer && (
-              <div className="game-phase">
-                <h2 className="section-title">Round {round}</h2>
-                <div className="waiting-card">
-                  <p>Waiting for your partner to make their guess...</p>
-                </div>
-              </div>
-            )}
-
-            {gameState === 'revealed' && (
-              <div className="game-phase">
-                <h2 className="section-title">Round {round} - Results</h2>
-                <div className="reveal-card">
-                  <div className="reveal-section">
-                    <h4>Your Answer:</h4>
-                    <p className="reveal-text">{selectedAnswer}</p>
-                  </div>
-                  <div className="reveal-section">
-                    <h4>Their Guess:</h4>
-                    <p className="reveal-text">{selectedGuess}</p>
-                  </div>
-                  <div className="reveal-section" style={{ marginTop: '1rem', padding: '1rem', backgroundColor: selectedAnswer === selectedGuess ? '#d4edda' : '#f8d7da', borderRadius: '6px' }}>
-                    <h4 style={{ margin: 0 }}>
-                      {selectedAnswer === selectedGuess ? '✅ Correct!' : '❌ Not quite!'}
-                    </h4>
-                  </div>
-                  <div className="reveal-actions">
-                    <button className="action-btn primary-action" onClick={handleNextRound}>
-                      Next Round
-                    </button>
-                    <button className="action-btn secondary" onClick={handleLeaveLobby}>
-                      End Game
+                    <button
+                      onClick={handleLeaveLobby}
+                      disabled={loading}
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50"
+                    >
+                      Leave Game
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Invite Friend Modal */}
+          {showInviteModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-gradient-to-br from-purple-900 to-pink-900 rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+                <h3 className="text-2xl font-bold text-white mb-4">Invite a Friend</h3>
+                
+                {friends.length === 0 ? (
+                  <p className="text-white/70 text-center py-4">
+                    No friends available. Add some friends first!
+                  </p>
+                ) : (
+                  <div className="space-y-2 mb-4">
+                    {friends.map((friend) => (
+                      <button
+                        key={friend.id}
+                        onClick={() => handleInviteFriend(friend.id)}
+                        disabled={loading}
+                        className="w-full bg-white/10 hover:bg-white/20 p-4 rounded-lg flex items-center gap-3 transition disabled:opacity-50 text-white"
+                      >
+                        <span className="text-3xl">
+                          {AVATAR_EMOJIS[friend.avatar_emoji || 'avatar1']}
+                        </span>
+                        <span className="font-bold">{friend.display_name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowInviteModal(false)}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition"
+                >
+                  Cancel
+                </button>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );
 }
-
