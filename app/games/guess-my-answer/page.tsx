@@ -591,7 +591,7 @@ export default function GuessMyAnswerPage() {
         // Next question
         const currentAnswerer = gamePhase === 'round1' ? scores.round1Answerer : scores.round2Answerer;
         
-        await supabase.from('guess_my_answer_state').update({
+        await (supabase.from('guess_my_answer_state') as any).update({
           current_turn_user_id: currentAnswerer,
           game_data: {
             selectedCategory,
