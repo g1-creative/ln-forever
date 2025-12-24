@@ -146,9 +146,13 @@ export default function GuessMyAnswerPage() {
 
     previousStatusRef.current = currentLobby.status;
 
-    // If lobby is already playing, load game state
+    // If lobby is already playing, transition to playing view and load game state
     if (currentLobby.status === 'playing' && lobbyView === 'lobby') {
-      console.log('Lobby is already playing, loading game state...');
+      console.log('Lobby is already playing, transitioning to playing view...');
+      setLobbyView('playing');
+      loadGameState();
+    } else if (currentLobby.status === 'playing' && lobbyView === 'playing') {
+      // Already in playing view, just load the state
       loadGameState();
     }
 
@@ -190,7 +194,8 @@ export default function GuessMyAnswerPage() {
 
               // If lobby status changed to playing, load game state
               if (updated.status === 'playing' && previousStatus === 'waiting' && lobbyView === 'lobby') {
-                console.log('Game started! Loading game state...');
+                console.log('Game started! Transitioning to playing view...');
+                setLobbyView('playing');
                 await loadGameState();
               }
             }
@@ -209,7 +214,7 @@ export default function GuessMyAnswerPage() {
 
   // Game state subscription
   useEffect(() => {
-    if (!supabase || !currentLobby || lobbyView !== 'playing') return;
+    if (!supabase || !currentLobby || currentLobby.status !== 'playing') return;
 
     if (gameStateChannelRef.current) {
       gameStateChannelRef.current.unsubscribe();
@@ -244,7 +249,7 @@ export default function GuessMyAnswerPage() {
       gameStateChannelRef.current = null;
       clearInterval(pollInterval);
     };
-  }, [currentLobby, supabase, lobbyView]);
+  }, [currentLobby, supabase]);
 
   const loadGameState = async () => {
     if (!currentLobby || !user || !supabase) return;
