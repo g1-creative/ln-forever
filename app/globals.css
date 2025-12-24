@@ -1586,6 +1586,244 @@ main {
   }
 }
 
+/* iPhone 12/13/14 Pro (390px) and similar sizes */
+@media (min-width: 375px) and (max-width: 390px) {
+  main {
+    padding: var(--space-sm);
+    padding-top: calc(var(--space-sm) + 80px);
+    padding-left: var(--space-xs);
+    padding-right: var(--space-xs);
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .section {
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .page-header {
+    padding: var(--space-sm) 0;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .stats-grid {
+    gap: var(--space-xs);
+  }
+
+  .stat-card {
+    padding: var(--space-sm);
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  .difficulty-stats {
+    gap: var(--space-xs);
+  }
+
+  .difficulty-stat {
+    padding: var(--space-sm);
+    font-size: 0.875rem;
+  }
+
+  /* Role-play roulette optimizations */
+  .scenario-view-mode {
+    padding: var(--space-sm);
+    padding-top: calc(var(--space-sm) + 60px);
+  }
+
+  .scenario-view-mode .roles-container {
+    gap: var(--space-xs);
+  }
+
+  .scenario-view-mode .role-section {
+    padding: var(--space-sm);
+    font-size: 0.8125rem;
+  }
+
+  .scenario-view-mode .role-description {
+    font-size: 0.8125rem;
+    line-height: 1.3;
+  }
+
+  /* Would You Rather optimizations */
+  .wyr-view-mode {
+    padding: var(--space-sm);
+    padding-top: calc(var(--space-sm) + 60px);
+  }
+
+  .wyr-options {
+    gap: var(--space-xs);
+  }
+
+  .wyr-option {
+    padding: var(--space-sm);
+    min-height: 220px;
+  }
+
+  .wyr-option-value {
+    font-size: 0.9rem;
+    line-height: 1.3;
+  }
+
+  .wyr-image {
+    width: 70px;
+    height: 70px;
+  }
+
+  .wyr-image img,
+  .wyr-image span,
+  .wyr-image > span {
+    width: 70px !important;
+    height: 70px !important;
+  }
+
+  /* Game cards */
+  .games-grid {
+    gap: var(--space-sm);
+  }
+
+  .game-card {
+    padding: var(--space-md);
+  }
+
+  .game-card-description {
+    font-size: 0.85rem;
+  }
+
+  .game-card-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .game-card-icon svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* Buttons and actions */
+  .action-btn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.875rem;
+  }
+
+  .spin-button {
+    padding: var(--space-md);
+    font-size: 1rem;
+  }
+
+  /* Category and difficulty selectors */
+  .category-selector {
+    gap: var(--space-xs);
+  }
+
+  .category-btn {
+    padding: var(--space-sm) var(--space-xs);
+    font-size: 0.8rem;
+  }
+
+  .difficulty-btn {
+    padding: var(--space-sm);
+    font-size: 0.85rem;
+  }
+
+  /* Back to spin button */
+  .back-to-spin-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.8rem;
+    top: calc(var(--space-xs) + env(safe-area-inset-top, 0px));
+    left: var(--space-xs);
+  }
+
+  /* Stats bar */
+  .game-stats-bar {
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  .stat-badge {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.8rem;
+  }
+
+  /* WYR discussion prompt */
+  .wyr-discussion-prompt {
+    padding: var(--space-md);
+  }
+
+  .wyr-discussion-prompt h3 {
+    font-size: 1.1rem;
+  }
+
+  .wyr-discussion-prompt p {
+    font-size: 0.9rem;
+  }
+
+  /* Scenario card optimizations */
+  .scenario-card {
+    padding: var(--space-md);
+  }
+
+  .scenario-title {
+    font-size: 1.2rem;
+  }
+
+  /* Hints section */
+  .hints-section {
+    padding: var(--space-md);
+  }
+
+  .hint-tag {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+  }
+
+  /* Viewport height optimizations for 844px */
+  .scenario-view-mode,
+  .wyr-view-mode {
+    min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .scenario-view-mode .roles-container {
+    max-height: calc(50vh - 100px);
+  }
+
+  .wyr-options {
+    max-height: calc(50vh - 150px);
+  }
+
+  .wyr-option {
+    max-height: 100%;
+    overflow-y: auto;
+  }
+
+  /* Ensure content fits in viewport */
+  .wyr-card {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+
+  .scenario-card {
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+  }
+}
+
 /* Extra small phones */
 @media (max-width: 374px) {
   .games-grid {
