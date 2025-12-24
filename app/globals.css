@@ -1464,40 +1464,6 @@ main {
   main {
     padding-top: 50px; /* Reduced from 120px */
   }
-}
-
-/* Extra compact for very small screens */
-@media (max-width: 480px) {
-  .navbar-container {
-    padding: 4px 8px;
-    min-height: 40px;
-  }
-
-  .navbar-brand {
-    font-size: 0.8rem;
-  }
-
-  .navbar-logo {
-    width: 20px;
-    height: 20px;
-  }
-
-  .navbar-link {
-    font-size: 0.7rem;
-    padding: 5px 6px;
-    min-height: 30px;
-  }
-
-  .navbar-btn {
-    padding: 5px 8px;
-    font-size: 0.7rem;
-    min-height: 30px;
-  }
-
-  main {
-    padding-top: 45px;
-  }
-}
 
   .hero-actions {
     flex-direction: column;
@@ -1542,6 +1508,39 @@ main {
   .game-card {
     min-width: 0;
     overflow: hidden;
+  }
+}
+
+/* Extra compact for very small screens */
+@media (max-width: 480px) {
+  .navbar-container {
+    padding: 4px 8px;
+    min-height: 40px;
+  }
+
+  .navbar-brand {
+    font-size: 0.8rem;
+  }
+
+  .navbar-logo {
+    width: 20px;
+    height: 20px;
+  }
+
+  .navbar-link {
+    font-size: 0.7rem;
+    padding: 5px 6px;
+    min-height: 30px;
+  }
+
+  .navbar-btn {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+    min-height: 30px;
+  }
+
+  main {
+    padding-top: 45px;
   }
 }
 
