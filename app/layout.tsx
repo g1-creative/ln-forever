@@ -9,6 +9,13 @@ export const metadata: Metadata = {
   title: 'LN Forever - Practice English Conversation',
   description: 'Play fun games together and practice English conversation. Perfect for couples learning English together.',
   manifest: '/manifest.json',
+  keywords: ['English learning', 'conversation practice', 'couples games', 'language learning', 'fun games'],
+  authors: [{ name: 'LN Forever' }],
+  creator: 'LN Forever',
+  publisher: 'LN Forever',
+  formatDetection: {
+    telephone: false,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -45,7 +52,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <meta name="theme-color" content="#FF6FAE" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -59,23 +66,25 @@ export default function RootLayout({
               window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js', { scope: '/' })
                   .then((registration) => {
-                    console.log('Service Worker registered successfully:', registration.scope);
-                    
                     // Check for updates
                     registration.addEventListener('updatefound', () => {
                       const newWorker = registration.installing;
                       if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New service worker available, prompt user to refresh
-                            console.log('New version available!');
+                            // New service worker available
+                            if (typeof window !== 'undefined' && 'Notification' in window) {
+                              console.log('New version available!');
+                            }
                           }
                         });
                       }
                     });
                   })
-                  .catch((registrationError) => {
-                    console.log('Service Worker registration failed:', registrationError);
+                  .catch((err) => {
+                    if (process.env.NODE_ENV === 'development') {
+                      console.log('Service Worker registration failed:', err);
+                    }
                   });
               });
             }

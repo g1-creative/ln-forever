@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { memo, useMemo } from 'react';
 import { Game } from '@/types';
 
 interface GameCardProps {
@@ -16,25 +17,27 @@ const colorClasses: Record<string, string> = {
   red: 'game-card-red',
 };
 
-export default function GameCard({ game }: GameCardProps) {
+const iconComponents: Record<string, () => JSX.Element> = {
+  conversation: ConversationIcon,
+  choices: ChoicesIcon,
+  guess: GuessIcon,
+  questions: QuestionsIcon,
+  story: StoryIcon,
+  dare: DareIcon,
+  words: WordsIcon,
+  debate: DebateIcon,
+};
+
+function GameCard({ game }: GameCardProps) {
   const colorClass = colorClasses[game.color] || 'game-card-purple';
   const isAvailable = game.available;
+  const IconComponent = iconComponents[game.icon] || ConversationIcon;
 
-  return (
-    <Link 
-      href={isAvailable ? `/games/${game.id}` : '#'}
-      className={`game-card ${colorClass} ${!isAvailable ? 'game-card-disabled' : ''}`}
-    >
+  const cardContent = useMemo(() => (
+    <>
       <div className="game-card-header">
         <div className="game-card-icon">
-          {game.icon === 'conversation' && <ConversationIcon />}
-          {game.icon === 'choices' && <ChoicesIcon />}
-          {game.icon === 'guess' && <GuessIcon />}
-          {game.icon === 'questions' && <QuestionsIcon />}
-          {game.icon === 'story' && <StoryIcon />}
-          {game.icon === 'dare' && <DareIcon />}
-          {game.icon === 'words' && <WordsIcon />}
-          {game.icon === 'debate' && <DebateIcon />}
+          <IconComponent />
         </div>
         {game.featured && (
           <span className="game-badge">Featured</span>
@@ -71,13 +74,25 @@ export default function GameCard({ game }: GameCardProps) {
           <span className="game-card-action disabled">Coming Soon</span>
         )}
       </div>
+    </>
+  ), [game, isAvailable, IconComponent]);
+
+  return (
+    <Link 
+      href={isAvailable ? `/games/${game.id}` : '#'}
+      className={`game-card ${colorClass} ${!isAvailable ? 'game-card-disabled' : ''}`}
+      aria-label={`${game.name} - ${isAvailable ? 'Play now' : 'Coming soon'}`}
+    >
+      {cardContent}
     </Link>
   );
 }
 
+export default memo(GameCard);
+
 function ConversationIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       <path d="M13 8H7" />
       <path d="M17 12H7" />
@@ -87,7 +102,7 @@ function ConversationIcon() {
 
 function ChoicesIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M9 11l3 3L22 4" />
       <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
     </svg>
@@ -96,7 +111,7 @@ function ChoicesIcon() {
 
 function GuessIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -106,7 +121,7 @@ function GuessIcon() {
 
 function QuestionsIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -118,7 +133,7 @@ function QuestionsIcon() {
 
 function StoryIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
     </svg>
@@ -127,7 +142,7 @@ function StoryIcon() {
 
 function DareIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
     </svg>
@@ -136,7 +151,7 @@ function DareIcon() {
 
 function WordsIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M4 19.5A2.5 2.5 0 0 0 6.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
       <path d="M8 7h8" />
@@ -148,7 +163,7 @@ function WordsIcon() {
 
 function DebateIcon() {
   return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
       <path d="M8 10h8" />
       <path d="M8 14h6" />
