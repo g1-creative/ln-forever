@@ -25,7 +25,7 @@ export const games: Game[] = [
     players: '2',
     duration: '5-10 minutes',
     featured: true,
-    available: false,
+    available: true,
   },
   {
     id: 'story-builder',
