@@ -626,7 +626,7 @@ export default function GuessMyAnswerPage() {
     setLoading(true);
     try {
       // Reset game state
-      await supabase.from('guess_my_answer_state').update({
+      await (supabase.from('guess_my_answer_state') as any).update({
         current_turn_user_id: null,
         game_data: null,
       }).eq('lobby_id', currentLobby.id);
@@ -769,11 +769,11 @@ export default function GuessMyAnswerPage() {
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-3xl">
-                          {AVATAR_EMOJIS[participant.profiles?.avatar_emoji || 'avatar1']}
+                          {AVATAR_EMOJIS[participant.profile?.avatar_selection || 'avatar1']}
                         </span>
                         <div>
                           <p className="font-bold">
-                            {participant.profiles?.display_name}
+                            {participant.profile?.name}
                             {participant.user_id === currentLobby.host_id && ' (Host)'}
                             {participant.user_id === user?.id && ' (You)'}
                           </p>
@@ -944,8 +944,8 @@ export default function GuessMyAnswerPage() {
                             )}
                           </div>
                         ) : (
-                          <div className="text-center text-xl">
-                            Waiting for {getParticipantProfile(currentAnswerer)?.profiles?.display_name} to answer...
+                        <div className="text-center text-xl">
+                          Waiting for {getParticipantProfile(currentAnswerer)?.profile?.name} to answer...
                           </div>
                         )}
                       </div>
@@ -983,8 +983,8 @@ export default function GuessMyAnswerPage() {
                             )}
                           </div>
                         ) : (
-                          <div className="text-center text-xl">
-                            Waiting for {getParticipantProfile(currentGuesser)?.profiles?.display_name} to guess...
+                        <div className="text-center text-xl">
+                          Waiting for {getParticipantProfile(currentGuesser)?.profile?.name} to guess...
                           </div>
                         )}
                       </div>
@@ -1064,10 +1064,10 @@ export default function GuessMyAnswerPage() {
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-white/10 p-4 rounded-lg">
                         <div className="text-3xl mb-2">
-                          {AVATAR_EMOJIS[getParticipantProfile(scores.round1Guesser)?.profiles?.avatar_emoji || 'avatar1']}
+                          {AVATAR_EMOJIS[getParticipantProfile(scores.round1Guesser)?.profile?.avatar_selection || 'avatar1']}
                         </div>
                         <p className="font-bold">
-                          {getParticipantProfile(scores.round1Guesser)?.profiles?.display_name}
+                          {getParticipantProfile(scores.round1Guesser)?.profile?.name}
                         </p>
                         <p className="text-3xl font-bold text-green-400">
                           {scores.round1Score}/10
@@ -1076,10 +1076,10 @@ export default function GuessMyAnswerPage() {
 
                       <div className="bg-white/10 p-4 rounded-lg">
                         <div className="text-3xl mb-2">
-                          {AVATAR_EMOJIS[getParticipantProfile(scores.round2Guesser)?.profiles?.avatar_emoji || 'avatar1']}
+                          {AVATAR_EMOJIS[getParticipantProfile(scores.round2Guesser)?.profile?.avatar_selection || 'avatar1']}
                         </div>
                         <p className="font-bold">
-                          {getParticipantProfile(scores.round2Guesser)?.profiles?.display_name}
+                          {getParticipantProfile(scores.round2Guesser)?.profile?.name}
                         </p>
                         <p className="text-3xl font-bold text-green-400">
                           {scores.round2Score}/10
@@ -1091,7 +1091,7 @@ export default function GuessMyAnswerPage() {
                       <p className="text-3xl font-bold text-yellow-400">It's a Tie! 🤝</p>
                     ) : (
                       <p className="text-3xl font-bold text-green-400">
-                        {getParticipantProfile(getWinner())?.profiles?.display_name} Wins! 🏆
+                        {getParticipantProfile(getWinner())?.profile?.name} Wins! 🏆
                       </p>
                     )}
                   </div>
