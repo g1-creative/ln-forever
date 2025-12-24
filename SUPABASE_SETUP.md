@@ -1,5 +1,5 @@
 
- # Supabase Setup Guide
+ okoka# Supabase Setup Guide
 
 ## Step 1: Create Supabase Project
 

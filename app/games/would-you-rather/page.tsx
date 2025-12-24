@@ -108,142 +108,156 @@ export default function WouldYouRatherPage() {
   return (
     <ProtectedRoute>
       <div className="container">
-        <div className="page-header">
-          <Link href="/games" className="back-link">
-            ← Back to Games
-          </Link>
-          <Image 
-            src="/images/ln_logo_favicon.png" 
-            alt="LN Forever" 
-            width={64} 
-            height={64}
-            className="page-header-logo"
-            priority
-          />
-          <h1>Would You Rather</h1>
-          <p>Make tough choices and spark interesting conversations</p>
-        </div>
-
-        <div className="game-stats-bar">
-          <div className="stat-badge">
-            <span className="stat-label">Available</span>
-            <span className="stat-value">{questionCount}</span>
-          </div>
-          <div className="stat-badge">
-            <span className="stat-label">Answered</span>
-            <span className="stat-value">{questionsAnswered}</span>
-          </div>
-          {questionsAnswered > 0 && (
-            <div className="stat-badge clickable" onClick={() => setShowStats(!showStats)}>
-              <span className="stat-label">Stats</span>
-              <span className="stat-value">📊</span>
+        {!currentQuestion && (
+          <>
+            <div className="page-header">
+              <Link href="/games" className="back-link">
+                ← Back to Games
+              </Link>
+              <Image 
+                src="/images/ln_logo_favicon.png" 
+                alt="LN Forever" 
+                width={64} 
+                height={64}
+                className="page-header-logo"
+                priority
+              />
+              <h1>Would You Rather</h1>
+              <p>Make tough choices and spark interesting conversations</p>
             </div>
-          )}
-        </div>
 
-        {showStats && questionsAnswered > 0 && (
-          <div className="section wyr-stats-section">
-            <h3 className="section-subtitle">Your Session Stats</h3>
-            <div className="wyr-stats-grid">
-              <div className="wyr-stat-item">
-                <div className="wyr-stat-value">{questionsAnswered}</div>
-                <div className="wyr-stat-label">Questions Answered</div>
+            <div className="game-stats-bar">
+              <div className="stat-badge">
+                <span className="stat-label">Available</span>
+                <span className="stat-value">{questionCount}</span>
               </div>
-              <div className="wyr-stat-item">
-                <div className="wyr-stat-value">{answeredQuestionIds.length}</div>
-                <div className="wyr-stat-label">Unique Questions</div>
+              <div className="stat-badge">
+                <span className="stat-label">Answered</span>
+                <span className="stat-value">{questionsAnswered}</span>
               </div>
-              {Object.keys(categoryStats).length > 0 && (
-                <div className="wyr-stat-item full-width">
-                  <div className="wyr-stat-label">By Category</div>
-                  <div className="wyr-category-stats">
-                    {Object.entries(categoryStats).map(([cat, count]) => {
-                      const catInfo = categories.find(c => c.value === cat);
-                      return (
-                        <div key={cat} className="wyr-category-stat">
-                          <span className="wyr-category-icon">{catInfo?.icon || '📌'}</span>
-                          <span className="wyr-category-name">{catInfo?.label || cat}</span>
-                          <span className="wyr-category-count">{count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+              {questionsAnswered > 0 && (
+                <div className="stat-badge clickable" onClick={() => setShowStats(!showStats)}>
+                  <span className="stat-label">Stats</span>
+                  <span className="stat-value">📊</span>
                 </div>
               )}
             </div>
-          </div>
-        )}
 
-        <div className="section">
-          <div className="section-title">Choose Category</div>
-          <div className="category-selector wyr-categories">
-            {categories.map((cat) => (
-              <button
-                key={cat.value}
-                className={`category-btn ${selectedCategory === cat.value ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat.value)}
-                title={cat.label}
-              >
-                <span className="category-icon">{cat.icon}</span>
-                <span className="category-text">{cat.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="section">
-          <div className="section-title">Choose Difficulty</div>
-          <div className="difficulty-selector">
-            <button
-              className={`difficulty-btn easy ${selectedDifficulty === 'all' ? 'active' : ''} ${selectedDifficulty === 'easy' ? 'active' : ''}`}
-              onClick={() => setSelectedDifficulty(selectedDifficulty === 'easy' ? 'all' : 'easy')}
-            >
-              <span className="difficulty-label">All</span>
-            </button>
-            <button
-              className={`difficulty-btn easy ${selectedDifficulty === 'easy' ? 'active' : ''}`}
-              onClick={() => setSelectedDifficulty('easy')}
-            >
-              <span className="difficulty-label">Easy</span>
-            </button>
-            <button
-              className={`difficulty-btn medium ${selectedDifficulty === 'medium' ? 'active' : ''}`}
-              onClick={() => setSelectedDifficulty('medium')}
-            >
-              <span className="difficulty-label">Medium</span>
-            </button>
-            <button
-              className={`difficulty-btn hard ${selectedDifficulty === 'hard' ? 'active' : ''}`}
-              onClick={() => setSelectedDifficulty('hard')}
-            >
-              <span className="difficulty-label">Hard</span>
-            </button>
-          </div>
-        </div>
-
-        {!currentQuestion && (
-          <button className="spin-button" onClick={handleGetQuestion} disabled={isAnimating}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-            </svg>
-            <span>{isAnimating ? 'Loading...' : 'Get Question'}</span>
-          </button>
-        )}
-
-        {currentQuestion && (
-          <div className={`wyr-card show ${isAnimating ? 'animating' : ''}`}>
-            <div className="wyr-question-header">
-              <div className="wyr-category-badge-small">
-                {categories.find(c => c.value === currentQuestion.category)?.icon}
-                <span>{categories.find(c => c.value === currentQuestion.category)?.label}</span>
+            {showStats && questionsAnswered > 0 && (
+              <div className="section wyr-stats-section">
+                <h3 className="section-subtitle">Your Session Stats</h3>
+                <div className="wyr-stats-grid">
+                  <div className="wyr-stat-item">
+                    <div className="wyr-stat-value">{questionsAnswered}</div>
+                    <div className="wyr-stat-label">Questions Answered</div>
+                  </div>
+                  <div className="wyr-stat-item">
+                    <div className="wyr-stat-value">{answeredQuestionIds.length}</div>
+                    <div className="wyr-stat-label">Unique Questions</div>
+                  </div>
+                  {Object.keys(categoryStats).length > 0 && (
+                    <div className="wyr-stat-item full-width">
+                      <div className="wyr-stat-label">By Category</div>
+                      <div className="wyr-category-stats">
+                        {Object.entries(categoryStats).map(([cat, count]) => {
+                          const catInfo = categories.find(c => c.value === cat);
+                          return (
+                            <div key={cat} className="wyr-category-stat">
+                              <span className="wyr-category-icon">{catInfo?.icon || '📌'}</span>
+                              <span className="wyr-category-name">{catInfo?.label || cat}</span>
+                              <span className="wyr-category-count">{count}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <h2 className="wyr-title">Would You Rather...</h2>
-              <div className="wyr-difficulty-badge-small">
-                {currentQuestion.difficulty}
+            )}
+
+            <div className="section">
+              <div className="section-title">Choose Category</div>
+              <div className="category-selector wyr-categories">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    className={`category-btn ${selectedCategory === cat.value ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    title={cat.label}
+                  >
+                    <span className="category-icon">{cat.icon}</span>
+                    <span className="category-text">{cat.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="wyr-options">
+            <div className="section">
+              <div className="section-title">Choose Difficulty</div>
+              <div className="difficulty-selector">
+                <button
+                  className={`difficulty-btn easy ${selectedDifficulty === 'all' ? 'active' : ''} ${selectedDifficulty === 'easy' ? 'active' : ''}`}
+                  onClick={() => setSelectedDifficulty(selectedDifficulty === 'easy' ? 'all' : 'easy')}
+                >
+                  <span className="difficulty-label">All</span>
+                </button>
+                <button
+                  className={`difficulty-btn easy ${selectedDifficulty === 'easy' ? 'active' : ''}`}
+                  onClick={() => setSelectedDifficulty('easy')}
+                >
+                  <span className="difficulty-label">Easy</span>
+                </button>
+                <button
+                  className={`difficulty-btn medium ${selectedDifficulty === 'medium' ? 'active' : ''}`}
+                  onClick={() => setSelectedDifficulty('medium')}
+                >
+                  <span className="difficulty-label">Medium</span>
+                </button>
+                <button
+                  className={`difficulty-btn hard ${selectedDifficulty === 'hard' ? 'active' : ''}`}
+                  onClick={() => setSelectedDifficulty('hard')}
+                >
+                  <span className="difficulty-label">Hard</span>
+                </button>
+              </div>
+            </div>
+
+            <button className="spin-button" onClick={handleGetQuestion} disabled={isAnimating}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              <span>{isAnimating ? 'Loading...' : 'Get Question'}</span>
+            </button>
+          </>
+        )}
+
+        {currentQuestion && (
+          <div className="wyr-view-mode">
+            <button 
+              className="back-to-spin-btn"
+              onClick={() => {
+                setCurrentQuestion(null);
+                setSelectedOption(null);
+                setIsRevealing(false);
+                setDiscussionPrompt('');
+              }}
+            >
+              ← Back to Filters
+            </button>
+            <div className={`wyr-card show ${isAnimating ? 'animating' : ''}`}>
+              <div className="wyr-question-header">
+                <div className="wyr-category-badge-small">
+                  {categories.find(c => c.value === currentQuestion.category)?.icon}
+                  <span>{categories.find(c => c.value === currentQuestion.category)?.label}</span>
+                </div>
+                <h2 className="wyr-title">Would You Rather...</h2>
+                <div className="wyr-difficulty-badge-small">
+                  {currentQuestion.difficulty}
+                </div>
+              </div>
+
+              <div className="wyr-options">
               <button
                 className={`wyr-option ${selectedOption === 'A' ? 'selected' : ''} ${isRevealing && selectedOption === 'A' ? 'revealed' : ''}`}
                 onClick={() => handleSelectOption('A')}
@@ -351,6 +365,7 @@ export default function WouldYouRatherPage() {
                 </svg>
                 <span>Next Question</span>
               </button>
+              </div>
             </div>
           </div>
         )}
